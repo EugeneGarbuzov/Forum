@@ -5,6 +5,23 @@
     <title></title>
 </head>
 <body>
-
+    {% if cursor.rowcount != 0 %}
+        <ul>
+        {% for topic in cursor %}
+            <li>
+                <p>
+                    <a href="{% url 'topic' topic.4 topic.0 %}">
+                        {{ topic.0 }}
+                    </a>
+                </p>
+                <p>{{ topic.1 }}</p>
+                <p>{{ topic.2 }}</p>
+                <p>{{ topic.3 }}</p>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No topics yet.</p>
+    {% endif %}
 </body>
 </html>

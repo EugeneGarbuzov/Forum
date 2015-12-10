@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>Forum sections</title>
 </head>
 <body>
     {% if cursor.rowcount != 0 %}
@@ -10,13 +10,13 @@
         {% for section in cursor %}
             <li>
                 <p>
-                    <a href="{% url 'section' section.1 %}">
-                        {{ section.1 }}
+                    <a href="{% url 'section' section.0 %}">
+                        {{ section.0 }}
                     </a>
                 </p>
-                <p>{{ section.3 }}</p>
+                <p>{{ section.1 }}</p>
                 <p>{{ section.2 }}</p>
-                <p>{{ section.0 }}</p>
+                <p>{{ section.3 }}</p>
             </li>
         {% endfor %}
         </ul>
