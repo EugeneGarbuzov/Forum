@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    {% if cursor.rowcount != 0 %}
+        <ul>
+        {% for section in cursor %}
+            <li>
+                <p>
+                    <a href="{% url 'section' section.1 %}">
+                        {{ section.1 }}
+                    </a>
+                </p>
+                <p>{{ section.3 }}</p>
+                <p>{{ section.2 }}</p>
+                <p>{{ section.0 }}</p>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No sections yet.</p>
+    {% endif %}
+</body>
+</html>
