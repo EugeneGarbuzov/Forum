@@ -10,13 +10,16 @@
         {% for topic in cursor %}
             <li>
                 <p>
-                    <a href="{% url 'topic' topic.4 topic.0 %}">
-                        {{ topic.0 }}
+                    <a href="{% url 'topic' topic.SectionName topic.Name %}">
+                        {{ topic.Name }}
                     </a>
                 </p>
-                <p>{{ topic.1 }}</p>
-                <p>{{ topic.2 }}</p>
-                <p>{{ topic.3 }}</p>
+
+                <p>{{ topic.Nickname }}</p>
+
+                <p>{{ topic.Date }}</p>
+
+                <p>{{ topic.Description }}</p>
             </li>
         {% endfor %}
         </ul>

@@ -1,25 +1,32 @@
 from django.db import connection
 from django.http import HttpResponse
+from django.shortcuts import render
+
+from Forum.tools import fetch_to_dict
+
 
 # Create your views here.
-from django.shortcuts import render
 
 
 def index(request):
     cursor = connection.cursor()
-    cursor.execute("SELECT Name, Description, sections.Date, Login FROM sections\
-                        JOIN users ON sections.User_ID = users.User_ID;")
-    context = {'cursor': cursor}
+    cursor.execute('''SELECT s.Name, s.Description, s.Date, u.Nickname
+                        FROM sections AS s, users AS u
+                          WHERE s.User_ID = u.User_ID;''')
+
+    context = {'cursor': fetch_to_dict(cursor)}
     return render(request, "index.html", context)
 
 
 def section(request, section_name):
     cursor = connection.cursor()
-    cursor.execute("SELECT topics.Name, topics.Description,  topics.Date, Login, sections.Date FROM topics\
-                        JOIN users ON users.User_ID = topics.User_ID\
-                        JOIN sections ON sections.Section_ID = topics.Section_ID\
-                        WHERE sections.Name = %s;", [section_name])
-    context = {'cursor': cursor}
+    cursor.execute('''SELECT t.Name, t.Description, t.Date, u.Nickname, s.Name AS SectionName
+                        FROM topics as t, users as u, sections as s
+                          WHERE u.User_ID = t.User_ID
+                          AND t.Section_ID = s.Section_ID
+                          AND s.Name = %s;''', section_name)
+
+    context = {'cursor': fetch_to_dict(cursor)}
     return render(request, "section.html", context)
 
 
