@@ -4,8 +4,9 @@ from django.shortcuts import render
 
 from Forum.tools import fetch_to_dict
 
-
 # Create your views here.
+
+user_login = 'User_1'
 
 
 def index(request):
