@@ -1,23 +1,31 @@
-from django.contrib.auth import authenticate
-from django.core.urlresolvers import reverse
 from django.db import connection
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import render
 
 from Forum.tools import fetch_to_dict
 
-# Create your views here.
 
-user_login = 'User_1'
+# Create your views here.
 
 
 def index(request):
+    login = request.user.username
+
+    if login:
+        with connection.cursor() as cursor:
+            cursor.execute('''SELECT Nickname FROM users
+                              WHERE Login = %s;''', login)
+            nickname = cursor.fetchone()[0]
+    else:
+        nickname = ''
+
     cursor = connection.cursor()
     cursor.execute('''SELECT s.Name, s.Description, s.Date, u.Nickname
                         FROM sections AS s, users AS u
                           WHERE s.User_ID = u.User_ID;''')
 
-    context = {'cursor': fetch_to_dict(cursor)}
+    context = {'nickname': nickname,
+               'sections': fetch_to_dict(cursor)}
     return render(request, 'index.html', context)
 
 
@@ -38,17 +46,3 @@ def topic(request, section_name, topic_name):
     return HttpResponse('Not implemented yet.')
 
 
-def login(request):
-    if request.method == 'POST':
-        login = request.POST['Login']
-        password = request.POST['Password']
-        user = authenticate(username=login, password=password)
-        if user:
-            login(request, user)
-            return HttpResponseRedirect(reverse('index'))
-        else:
-            return render(request, 'login.html', {
-                'error': 1,
-            })
-    else:
-        return render(request, "login.html")

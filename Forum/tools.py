@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import connection
 
 
@@ -14,25 +15,16 @@ class ForumAuthenticationBackend:
                           WHERE login = %s
                           AND password = %s;''', [username, password])
 
-        lol = fetch_to_dict(cursor)
-        if lol:
-            print(lol)
-
-            # login_valid = (settings.ADMIN_LOGIN == username)
-            # pwd_valid = check_password(password, settings.ADMIN_PASSWORD)
-            # if login_valid and pwd_valid:
-            #     try:
-            #         user = User.objects.get(username=username)
-            #     except User.DoesNotExist:
-            #         # Create a new user. Note that we can set password
-            #         # to anything, because it won't be checked; the password
-            #         # from settings.py will.
-            #         user = User(username=username, password='get from settings.py')
-            #         user.is_staff = True
-            #         user.is_superuser = True
-            #         user.save()
-            #     return user
-            # return None
+        if fetch_to_dict(cursor):
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                user = User(username=username, password=password)
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+            return user
+        return None
 
     def get_user(self, user_id):
         try:

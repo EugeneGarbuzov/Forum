@@ -5,23 +5,37 @@
     <title>Forum sections</title>
 </head>
 <body>
-    {% if cursor.rowcount != 0 %}
-        <ul>
-        {% for section in cursor %}
+{% if nickname %}
+    <p>Welcome, {{ nickname }},
+        <a href="{% url 'logout' %}">
+            Logout
+        </a>
+    </p>
+{% else %}
+    <a href="{% url 'login' %}">
+        Login
+    </a>
+{% endif %}
+{% if sections.rowcount != 0 %}
+    <ul>
+        {% for section in sections %}
             <li>
                 <p>
                     <a href="{% url 'section' section.Name %}">
                         {{ section.Name }}
                     </a>
                 </p>
+
                 <p>{{ section.Nickname }}</p>
+
                 <p>{{ section.Date }}</p>
+
                 <p>{{ section.Description }}</p>
             </li>
         {% endfor %}
-        </ul>
-    {% else %}
-        <p>No sections yet.</p>
-    {% endif %}
+    </ul>
+{% else %}
+    <p>No sections yet.</p>
+{% endif %}
 </body>
 </html>
