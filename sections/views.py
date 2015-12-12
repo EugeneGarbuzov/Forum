@@ -19,25 +19,27 @@ def index(request):
     else:
         nickname = ''
 
-    cursor = connection.cursor()
-    cursor.execute('''SELECT s.Name, s.Description, s.Date, u.Nickname
-                        FROM sections AS s, users AS u
+    with connection.cursor() as cursor:
+        cursor.execute('''SELECT s.Name, s.Description, s.Date, u.Nickname
+                          FROM sections AS s, users AS u
                           WHERE s.User_ID = u.User_ID;''')
+        sections = fetch_to_dict(cursor)
 
     context = {'nickname': nickname,
-               'sections': fetch_to_dict(cursor)}
+               'sections': sections}
     return render(request, 'index.html', context)
 
 
 def section(request, section_name):
-    cursor = connection.cursor()
-    cursor.execute('''SELECT t.Name, t.Description, t.Date, u.Nickname, s.Name AS SectionName
-                        FROM topics as t, users as u, sections as s
+    with connection.cursor() as cursor:
+        cursor.execute('''SELECT t.Name, t.Description, t.Date, u.Nickname, s.Name AS SectionName
+                          FROM topics as t, users as u, sections as s
                           WHERE u.User_ID = t.User_ID
                           AND t.Section_ID = s.Section_ID
                           AND s.Name = %s;''', section_name)
+        topics = fetch_to_dict(cursor)
 
-    context = {'cursor': fetch_to_dict(cursor)}
+    context = {'topics': topics}
     return render(request, 'section.html', context)
 
 

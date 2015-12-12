@@ -5,9 +5,9 @@
     <title></title>
 </head>
 <body>
-    {% if cursor.rowcount != 0 %}
+{% if topics.rowcount != 0 %}
         <ul>
-        {% for topic in cursor %}
+            {% for topic in topics %}
             <li>
                 <p>
                     <a href="{% url 'topic' topic.SectionName topic.Name %}">
