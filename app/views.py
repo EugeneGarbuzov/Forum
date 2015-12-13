@@ -4,7 +4,7 @@ from django.db import connection
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict
+from Forum.tools import fetch_to_dict, check_roles
 
 
 # Create your views here.
@@ -48,8 +48,7 @@ def index(request):
         nickname = ''
         role = 'Regular'
 
-    if role == 'Newbie':
-        role = 'Regular'
+    role = check_roles(role, 'write')
 
     with connection.cursor() as cursor:
 
@@ -59,8 +58,8 @@ def index(request):
                           (SELECT Role_Name FROM roles WHERE roles.Role_ID = s.Role_ID)  as Role_Name
                           FROM sections AS s, users AS u, roles as r
                           WHERE s.User_ID = u.User_ID
-                          AND s.Role_ID >= r.Role_ID
-                          AND r.Role_Name = %s;''', role)
+                          AND s.Role_ID = r.Role_ID
+                          AND r.Role_Name in %s;''', [tuple(role)])
         sections = fetch_to_dict(cursor)
 
     context = {'user': {'nickname': nickname, 'is_admin': role == 'Admin'},
