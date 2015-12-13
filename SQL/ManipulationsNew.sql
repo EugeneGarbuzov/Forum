@@ -22,10 +22,10 @@ insert into Trophies(Trophy_Name) values
     ('Trophy_5');
 
 insert into Tags(Tag_Name, References_Number) values
-    ('Тag_1', 1),
-    ('Тag_2', 1),
-    ('Тag_3', 1),
-    ('Тag_4', 1);
+    ('Tag_1', 1),
+    ('Tag_2', 1),
+    ('Tag_3', 1),
+    ('Tag_4', 1);
 
 insert into Users
 	(Role_ID,
