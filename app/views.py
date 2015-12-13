@@ -34,6 +34,29 @@ def logout(request):
     return HttpResponseRedirect(reverse('index'))
 
 
+def register(request):
+    if request.user.username:
+        return HttpResponseRedirect(reverse('index'))
+
+    if request.method == 'POST':
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute('''INSERT INTO Users(Role_ID, Rank_ID,Login,Password,email,Nickname,Full_Name,Date,Status,Signature)
+                                  SELECT Role_ID, Rank_ID, %s, %s, %s, %s, %s, now(), %s, %s
+                                  FROM Roles, Ranks
+                                  WHERE Role_Name = 'Newbie' AND Rank_Name = 'Rank_1';''',
+                               (request.POST['Login'], request.POST['Password'], request.POST['email'],
+                                request.POST['Nickname'], request.POST['Full_Name'],
+                                request.POST['Status'], request.POST['Signature']))
+                user = auth.authenticate(username=request.POST['Login'], password=request.POST['Password'])
+                auth.login(request, user)
+                return HttpResponseRedirect(reverse('index'))
+            except:
+                return render(request, 'register.html', {'error': 1, })
+    else:
+        return render(request, "register.html")
+
+
 def index(request):
     login = request.user.username
 

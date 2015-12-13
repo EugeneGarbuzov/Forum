@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+</head>
+<body>
+{% if error %}
+    <p>Error.</p>
+{% endif %}
+
+<form method="post" action="{% url 'register' %}">
+    {% csrf_token %}
+
+    <table>
+        <tr>
+            <td>
+                <label for="Login">Login: </label>
+            </td>
+            <td>
+                <input id="Login" type="text" name="Login" value="{{ Login }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="Password">Password: </label>
+            </td>
+            <td>
+                <input id="Password" type="password" name="Password" value="{{ Password }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="email">Email: </label>
+            </td>
+            <td>
+                <input id="email" type="email" name="email" value="{{ email }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="Nickname">Nickname: </label>
+            </td>
+            <td>
+                <input id="Nickname" type="text" name="Nickname" value="{{ Nickname }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="Full_Name">Full name: </label>
+            </td>
+            <td>
+                <input id="Full_Name" type="text" name="Full_Name" value="{{ Full_Name }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="Status">Status: </label>
+            </td>
+            <td>
+                <input id="Status" type="text" name="Status" value="{{ Status }}">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="Signature">Signature: </label>
+            </td>
+            <td>
+                <input id="Signature" type="text" name="Signature" value="{{ Signature }}">
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+            </td>
+            <td>
+                <input type="submit" value="Register"/>
+                <input type="hidden" name="next" value="{{ next }}"/>
+            </td>
+        </tr>
+    </table>
+</form>
+</body>
+</html>
