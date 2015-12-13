@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add section</title>
+</head>
+<body>
+{% block content %}
+
+    {% if error %}
+        <p>Error.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'add_section' %}">
+        {% csrf_token %}
+
+        <table>
+            <tr>
+                <td>
+                    <label for="Name">Section name: </label>
+                </td>
+                <td>
+                    <input id="Name" type="text" name="Name" value="{{ Name }}">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="Description">Description: </label>
+                </td>
+                <td>
+                    <input id="Description" type="text" name="Description" value="{{ Description }}">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="Role_Name">Role: </label>
+                </td>
+                <td>
+                    <select id="Role_Name" name="Role_Name">
+                        <option selected="selected">Regular</option>
+                        <option>Admin</option>
+                        <option>Moderator</option>
+                        <option>Regular</option>
+                        <option>Newbie</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+
+                </td>
+                <td>
+                    <input type="submit" value="Add section"/>
+                    <input type="hidden" name="next" value="{{ next }}"/>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+{% endblock %}
+</body>
+</html>

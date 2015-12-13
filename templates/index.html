@@ -42,10 +42,10 @@
 {% else %}
     <p>No sections yet.</p>
 {% endif %}
-{#{% if user.is_admin %}#}
-{#    <a href="{% url 'logout' %}">#}
-{#        Add Section#}
-{#    </a>#}
-{#{% endif %}#}
+{% if user.is_admin %}
+    <a href="{% url 'add_section' %}">
+        Add Section
+    </a>
+{% endif %}
 </body>
 </html>
