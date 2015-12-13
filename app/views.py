@@ -151,6 +151,14 @@ def section(request, section_name):
                           AND s.Name = %s;''', section_name)
         topics = fetch_to_dict(cursor)
 
+    for t in topics:
+        with connection.cursor() as cursor:
+            cursor.execute('''SELECT Tag_Name FROM Tags_Topics
+                              JOIN Tags ON Tags.Tag_ID = Tags_Topics.Tag_ID
+                              JOIN Topics ON Topics.Topic_ID = Tags_Topics.Topic_ID
+                              WHERE Name = %s;''', t['Name'])
+            t['Tags'] = tuple(row[0] for row in cursor.fetchall())
+
     context = {'topics': topics}
     return render(request, 'section.html', context)
 
