@@ -1,5 +1,3 @@
-{% load forum_tags %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,8 +17,11 @@
                 <p>{{ topic.Nickname }}</p>
                 <p>{{ topic.Date }}</p>
                 <p>{{ topic.Description }}</p>
-                <p>
-                    {% tags topic.Tags %}
+
+                <p> Tags:
+                    {% for tag in topic.Tags %}
+                        {{ tag }}
+                    {% endfor %}
                 </p>
             </li>
         {% endfor %}

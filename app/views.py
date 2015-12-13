@@ -60,12 +60,11 @@ def register(request):
 def profile(request, user_login):
     with connection.cursor() as cursor:
         try:
-            cursor.execute('''SELECT Login,email,Nickname,Full_Name,Date,Status,Signature, r.Role_Name
+            cursor.execute('''SELECT Nickname, Full_Name, Date, Status, Signature, Role_Name
                           FROM users as u, roles as r
                           WHERE u.Login = %s
                           AND r.Role_ID = u.Role_ID;''', user_login)
             user = fetch_to_dict(cursor)[0]
-            print(user)
             return render(request, 'profile.html', user)
         except:
             return HttpResponseRedirect(reverse('index'))
@@ -151,13 +150,13 @@ def section(request, section_name):
                           AND s.Name = %s;''', section_name)
         topics = fetch_to_dict(cursor)
 
-    for t in topics:
+    for topic in topics:
         with connection.cursor() as cursor:
             cursor.execute('''SELECT Tag_Name FROM Tags_Topics
                               JOIN Tags ON Tags.Tag_ID = Tags_Topics.Tag_ID
                               JOIN Topics ON Topics.Topic_ID = Tags_Topics.Topic_ID
-                              WHERE Name = %s;''', t['Name'])
-            t['Tags'] = tuple(row[0] for row in cursor.fetchall())
+                              WHERE Name = %s;''', topic['Name'])
+            topic['Tags'] = tuple(row[0] for row in cursor.fetchall())
 
     context = {'topics': topics}
     return render(request, 'section.html', context)
