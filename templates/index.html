@@ -6,7 +6,10 @@
 </head>
 <body>
 {% if user.nickname %}
-    <p>h0i!!!, {{ user.nickname }},
+    <p>h0i!!!,
+        <a href="{% url 'profile' user.login %}">
+            {{ user.nickname }}
+        </a>,
         <a href="{% url 'logout' %}">
             b0i!!!!1
         </a>

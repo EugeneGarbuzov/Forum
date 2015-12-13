@@ -57,16 +57,30 @@ def register(request):
         return render(request, "register.html")
 
 
+def profile(request, user_login):
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute('''SELECT Login,email,Nickname,Full_Name,Date,Status,Signature, r.Role_Name
+                          FROM users as u, roles as r
+                          WHERE u.Login = %s
+                          AND r.Role_ID = u.Role_ID;''', user_login)
+            user = fetch_to_dict(cursor)[0]
+            print(user)
+            return render(request, 'profile.html', user)
+        except:
+            return HttpResponseRedirect(reverse('index'))
+
+
 def index(request):
     login = request.user.username
 
     if login:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT u.Nickname, r.Role_Name
+            cursor.execute('''SELECT u.Login, u.Nickname, r.Role_Name
                               FROM users as u, roles as r
                               WHERE u.Login = %s
                               AND r.Role_ID = u.Role_ID;''', login)
-            nickname, role = cursor.fetchone()
+            login, nickname, role = cursor.fetchone()
     else:
         nickname = ''
         role = 'Regular'
@@ -81,7 +95,7 @@ def index(request):
                           AND r.Role_Name in %s;''', [tuple(roles)])
         sections = fetch_to_dict(cursor)
 
-    context = {'user': {'nickname': nickname, 'is_admin': role == 'Admin'},
+    context = {'user': {'nickname': nickname, 'login': login, 'is_admin': role == 'Admin'},
                'sections': sections}
     return render(request, 'index.html', context)
 
