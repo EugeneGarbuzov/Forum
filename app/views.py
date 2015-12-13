@@ -60,7 +60,7 @@ def register(request):
 def profile(request, user_login):
     with connection.cursor() as cursor:
         try:
-            cursor.execute('''SELECT Nickname, Full_Name, Date, Status, Signature, Role_Name
+            cursor.execute('''SELECT Login, Nickname, Full_Name, Date, Status, Signature, Role_Name
                           FROM users as u, roles as r
                           WHERE u.Login = %s
                           AND r.Role_ID = u.Role_ID;''', user_login)

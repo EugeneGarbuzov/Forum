@@ -39,6 +39,18 @@
             {{ Signature }}
         </td>
     </tr>
+    <tr>
+        <td>
+            Role:
+        </td>
+        <td>
+            {{ Role_Name }}
+        </td>
+    </tr>
 </table>
+{% if user.get_username == Login %}
+    <a href="{% url 'logout' %}">
+    Edit
+{% endif %}
 </body>
 </html>
