@@ -187,9 +187,9 @@ def section(request, section_name):
             user_role = 'newbie'
 
         cursor.execute('''select role_name
-                      from sections, roles
-                      where roles.role_id = sections.role_id
-                      and name = %s;''', section_name)
+                          from sections, roles
+                          where roles.role_id = sections.role_id
+                          and name = %s;''', section_name)
         section_role = cursor.fetchone()[0]
 
         if section_role not in check_roles(user_role):
@@ -252,6 +252,14 @@ def add_topic(request, section_name):
 
                     elif request.method == 'POST':
                         try:
+                            if not request.POST['name']:
+                                raise ValueError('Topic name cannot be empty.')
+
+                            cursor.execute('''select name from topics;''')
+                            existing_topics = (row[0] for row in cursor.fetchall())
+                            if request.POST['name'] in existing_topics:
+                                raise ValueError('Such topic already exists.')
+
                             cursor.execute('''insert into topics(section_id, user_id, name, date, description)
                                               select section_id, user_id, %s, now(), %s
                                               from sections, users
@@ -259,11 +267,25 @@ def add_topic(request, section_name):
                                               and username = %s;''',
                                            (request.POST['name'], request.POST['description'], section_name, username))
 
-                            # todo обработать теги тут
-                            print(request.POST['tags'])
+                            if request.POST['tags'] and not request.POST['tags'].isspace():
+                                tags = tuple(set(request.POST['tags'].split()))
+                                cursor.execute('''select tag_name from tags;''')
+                                existing_tags = (row[0] for row in cursor.fetchall())
+                                for tag in tags:
+                                    if tag in existing_tags:
+                                        cursor.execute('''update tags
+                                                          set references_number = references_number + 1
+                                                          where tag_name = %s;''', tag)
+                                    else:
+                                        cursor.execute('''insert into tags(tag_name, references_number)
+                                                          values (%s, 1);''', tag)
+                                    cursor.execute('''insert into tags_topics(tag_id, topic_id)
+                                                      select tag_id, topic_id from tags, topics
+                                                      where tag_name = %s
+                                                      and name = %s;''', (tag, request.POST['name']))
 
                         except:
-                            return render(request, 'add_section.html', {'section_name': section_name, 'error': 1})
+                            return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
@@ -283,10 +305,10 @@ def remove_topic(request, section_name, topic_name):
             if user_role in ('admin', 'moderator'):
 
                 cursor.execute('''select username
-                          from users, sections, sections_users
-                          where users.user_id = sections_users.user_id
-                          and sections_users.section_id = sections.section_id
-                          and name = %s;''', section_name)
+                                  from users, sections, sections_users
+                                  where users.user_id = sections_users.user_id
+                                  and sections_users.section_id = sections.section_id
+                                  and name = %s;''', section_name)
                 moderators = (row[0] for row in cursor.fetchall())
 
                 if user_role == 'admin' or username in moderators:
