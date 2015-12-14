@@ -264,13 +264,8 @@ def add_topic(request, section_name):
                                 cursor.execute('''select tag_name from tags;''')
                                 existing_tags = (row[0] for row in cursor.fetchall())
                                 for tag in tags:
-                                    if tag in existing_tags:
-                                        cursor.execute('''update tags
-                                                          set references_number = references_number + 1
-                                                          where tag_name = %s;''', tag)
-                                    else:
-                                        cursor.execute('''insert into tags(tag_name, references_number)
-                                                          values (%s, 1);''', tag)
+                                    if tag not in existing_tags:
+                                        cursor.execute('''insert into tags(tag_name) values (%s);''', tag)
                                     cursor.execute('''insert into tags_topics(tag_id, topic_id)
                                                       select tag_id, topic_id from tags, topics
                                                       where tag_name = %s

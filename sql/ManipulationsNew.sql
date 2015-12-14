@@ -21,11 +21,11 @@ INSERT INTO trophies (trophy_name) VALUES
   ('trophy_4'),
   ('trophy_5');
 
-INSERT INTO tags (tag_name, references_number) VALUES
-  ('tag_1', 1),
-  ('tag_2', 1),
-  ('tag_3', 1),
-  ('tag_4', 1);
+INSERT INTO tags (tag_name) VALUES
+  ('tag_1'),
+  ('tag_2'),
+  ('tag_3'),
+  ('tag_4');
 
 INSERT INTO users
 (role_id,

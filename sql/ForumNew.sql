@@ -47,7 +47,6 @@ CREATE TABLE tags
   tag_id            SERIAL,
 
   tag_name          VARCHAR(30)      NOT NULL,
-  references_number INTEGER UNSIGNED NOT NULL,
 
   PRIMARY KEY (tag_id),
   UNIQUE (tag_name)
