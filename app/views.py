@@ -15,16 +15,12 @@ def login(request):
         return HttpResponseRedirect(reverse('index'))
 
     if request.method == 'POST':
-        login = request.POST['Login']
-        password = request.POST['Password']
-        user = auth.authenticate(username=login, password=password)
+        user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
         if user:
             auth.login(request, user)
             return HttpResponseRedirect(reverse('index'))
         else:
-            return render(request, 'login.html', {
-                'error': 1,
-            })
+            return render(request, 'login.html', {'error': 1})
     else:
         return render(request, "login.html")
 
@@ -39,124 +35,152 @@ def register(request):
         return HttpResponseRedirect(reverse('index'))
 
     if request.method == 'POST':
-        with connection.cursor() as cursor:
-            try:
-                cursor.execute('''INSERT INTO Users(Role_ID, Rank_ID,Login,Password,email,Nickname,Full_Name,Date,Status,Signature)
-                                  SELECT Role_ID, Rank_ID, %s, %s, %s, %s, %s, now(), %s, %s
-                                  FROM Roles, Ranks
-                                  WHERE Role_Name = 'Newbie' AND Rank_Name = 'Rank_1';''',
-                               (request.POST['Login'], request.POST['Password'], request.POST['email'],
-                                request.POST['Nickname'], request.POST['Full_Name'],
-                                request.POST['Status'], request.POST['Signature']))
-                user = auth.authenticate(username=request.POST['Login'], password=request.POST['Password'])
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('''insert into users(role_id, rank_id, username, password, email, nickname, full_name, date, status,signature)
+                                  select role_id, rank_id, %s, %s, %s, %s, %s, now(), %s, %s from roles, ranks
+                                  where role_name = 'newbie' and rank_name = 'rank_1';''',
+                               (request.POST['username'], request.POST['password'], request.POST['email'],
+                                request.POST['nickname'], request.POST['full_name'],
+                                request.POST['status'], request.POST['signature']))
+                user = auth.authenticate(username=request.POST['login'], password=request.POST['password'])
                 auth.login(request, user)
                 return HttpResponseRedirect(reverse('index'))
-            except:
-                return render(request, 'register.html', {'error': 1, })
-    else:
-        return render(request, "register.html")
+        except:
+            return render(request, 'register.html', {'error': 1})
+
+    return render(request, "register.html")
 
 
-def profile(request, user_login):
-    with connection.cursor() as cursor:
-        try:
-            cursor.execute('''SELECT Login, Nickname, Full_Name, Date, Status, Signature, Role_Name
-                          FROM users as u, roles as r
-                          WHERE u.Login = %s
-                          AND r.Role_ID = u.Role_ID;''', user_login)
+def profile(request, username):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('''select username, nickname, full_name, date, status, signature, role_name
+                          from users, roles
+                          where users.role_id = roles.role_id
+                          and username = %s;''', username)
             user = fetch_to_dict(cursor)[0]
             return render(request, 'profile.html', user)
-        except:
-            return HttpResponseRedirect(reverse('index'))
+    except:
+        return HttpResponseRedirect(reverse('index'))
+
+
+def edit_profile(request):
+    username = request.user.username
+
+    if not username:
+        return HttpResponseRedirect(reverse('index'))
+    try:
+        with connection.cursor() as cursor:
+
+            if request.method == 'GET':
+                cursor.execute('''select email, nickname, full_name, status, signature
+                                  from users
+                                  where username = %s;''', username)
+                user = fetch_to_dict(cursor)[0]
+                return render(request, 'edit_profile.html', user)
+
+            elif request.method == 'POST':
+                cursor.execute('''update users set password = %s, email = %s, nickname = %s,
+                                  full_name = %s, status = %s, signature = %s
+                                  where username = %s;''',
+                               (request.POST['password'], request.POST['email'],
+                                request.POST['nickname'], request.POST['full_name'],
+                                request.POST['status'], request.POST['signature'],
+                                username))
+                return HttpResponseRedirect(reverse('index'))
+    except:
+        return render(request, 'edit_profile.html', {'error': 1})
 
 
 def index(request):
-    login = request.user.username
+    username = request.user.username
 
-    if login:
+    if username:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT u.Login, u.Nickname, r.Role_Name
-                              FROM users as u, roles as r
-                              WHERE u.Login = %s
-                              AND r.Role_ID = u.Role_ID;''', login)
-            login, nickname, role = cursor.fetchone()
+            cursor.execute('''select username, nickname, role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            username, nickname, role = cursor.fetchone()
     else:
         nickname = ''
-        role = 'Regular'
+        role = 'regular'
 
     roles = check_roles(role)
 
     with connection.cursor() as cursor:
-        cursor.execute('''SELECT s.Name, s.Description, s.Date,
-                          (SELECT Role_Name FROM roles WHERE roles.Role_ID = s.Role_ID)  as Role_Name
-                          FROM sections AS s, roles as r
-                          WHERE s.Role_ID = r.Role_ID
-                          AND r.Role_Name in %s;''', [tuple(roles)])
+        cursor.execute('''select s.name, s.description, s.date,
+                          (select role_name from roles where roles.role_id = s.role_id)  as role_name
+                          from sections as s, roles as r
+                          where s.role_id = r.role_id
+                          and r.role_name in %s;''', [tuple(roles)])
         sections = fetch_to_dict(cursor)
 
-    context = {'user': {'nickname': nickname, 'login': login, 'is_admin': role == 'Admin'},
+    context = {'user': {'nickname': nickname, 'username': username, 'is_admin': role == 'admin'},
                'sections': sections}
     return render(request, 'index.html', context)
 
 
 def add_section(request):
-    login = request.user.username
+    username = request.user.username
 
-    if login:
-        with connection.cursor() as cursor:
-            cursor.execute('''SELECT r.Role_Name
-                              FROM users as u, roles as r
-                              WHERE r.Role_ID = u.Role_ID
-                              AND u.Login = %s;''', login)
-            role, = cursor.fetchone()
-        if role == 'Admin' and request.method == 'POST':
+    if username:
+        try:
             with connection.cursor() as cursor:
-                try:
-                    cursor.execute('''insert into Sections(Role_ID, Name, Date, Description)
-                                      select Role_ID, %s, now(), %s
-                                      from Roles where Role_Name = %s;''',
-                                   (request.POST['Name'], request.POST['Description'], request.POST['Role_Name']))
-                    return HttpResponseRedirect(reverse('index'))
-                except:
-                    return render(request, 'add_section.html', {'error': 1})
-        else:
-            return render(request, "add_section.html")
+                cursor.execute('''select role_name
+                                  from users, roles
+                                  where roles.role_id = users.role_id
+                                  and username = %s;''', username)
+                role = cursor.fetchone()[0]
+
+                if role == 'admin':
+                    if request.method == 'GET':
+                        return render(request, 'add_section.html')
+                    elif request.method == 'POST':
+                        cursor.execute('''insert into sections(role_id, name, date, description)
+                                          select role_id, %s, now(), %s
+                                          from roles where role_name = %s;''',
+                                       (request.POST['name'], request.POST['description'], request.POST['role_name']))
+        except:
+            return render(request, 'add_section.html', {'error': 1})
 
     return HttpResponseRedirect(reverse('index'))
 
 
 def remove_section(request, section_name):
-    login = request.user.username
+    username = request.user.username
 
-    if login:
+    if username:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT r.Role_Name
-                              FROM users as u, roles as r
-                              WHERE r.Role_ID = u.Role_ID
-                              AND u.Login = %s;''', login)
-            role, = cursor.fetchone()
-        if role == 'Admin':
-            with connection.cursor() as cursor:
-                cursor.execute('''DELETE FROM sections WHERE Name = %s''', section_name)
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            role = cursor.fetchone()[0]
+
+            if role == 'admin':
+                cursor.execute('''delete from sections where name = %s''', section_name)
+
     return HttpResponseRedirect(reverse('index'))
 
 
 def section(request, section_name):
     with connection.cursor() as cursor:
-        cursor.execute('''SELECT t.Name, t.Description, t.Date, u.Nickname, s.Name AS SectionName
-                          FROM topics as t, users as u, sections as s
-                          WHERE u.User_ID = t.User_ID
-                          AND t.Section_ID = s.Section_ID
-                          AND s.Name = %s;''', section_name)
+        cursor.execute('''select t.name, t.description, t.date, u.nickname, s.name as sectionname
+                          from topics as t, users as u, sections as s
+                          where u.user_id = t.user_id
+                          and t.section_id = s.section_id
+                          and s.name = %s;''', section_name)
         topics = fetch_to_dict(cursor)
 
     for topic in topics:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT Tag_Name FROM Tags_Topics
-                              JOIN Tags ON Tags.Tag_ID = Tags_Topics.Tag_ID
-                              JOIN Topics ON Topics.Topic_ID = Tags_Topics.Topic_ID
-                              WHERE Name = %s;''', topic['Name'])
-            topic['Tags'] = tuple(row[0] for row in cursor.fetchall())
+            cursor.execute('''select tag_name from tags_topics
+                              join tags on tags.tag_id = tags_topics.tag_id
+                              join topics on topics.topic_id = tags_topics.topic_id
+                              where name = %s;''', topic['name'])
+            topic['tags'] = tuple(row[0] for row in cursor.fetchall())
 
     context = {'topics': topics}
     return render(request, 'section.html', context)

@@ -8,39 +8,39 @@ def fetch_to_dict(cursor):
 
 
 def check_roles(role, mode='read'):
-    if role == 'Admin':
-        return 'Admin', 'Moderator', 'Regular', 'Newbie'
+    if role == 'admin':
+        return 'admin', 'moderator', 'regular', 'newbie'
 
-    if role == 'Moderator':
-        return 'Moderator', 'Regular', 'Newbie'
+    if role == 'moderator':
+        return 'moderator', 'regular', 'newbie'
 
-    if role == 'Regular':
-        return 'Regular', 'Newbie'
+    if role == 'regular':
+        return 'regular', 'newbie'
 
-    if role == 'Newbie':
+    if role == 'newbie':
         if mode == 'read':
-            return 'Regular', 'Newbie'
+            return 'regular', 'newbie'
         elif mode == 'write':
-            return 'Newbie',
+            return 'newbie',
 
 
 class ForumAuthenticationBackend:
     def authenticate(self, username=None, password=None):
 
-        cursor = connection.cursor()
-        cursor.execute('''SELECT * FROM users
-                          WHERE login = %s
-                          AND password = %s;''', [username, password])
+        with connection.cursor() as cursor:
+            cursor.execute('''select * from users
+                              where username = %s and password = %s;''',
+                           (username, password))
 
-        if fetch_to_dict(cursor):
-            try:
-                user = User.objects.get(username=username)
-            except User.DoesNotExist:
-                user = User(username=username, password=password)
-                user.is_staff = True
-                user.is_superuser = True
-                user.save()
-            return user
+            if fetch_to_dict(cursor):
+                try:
+                    user = User.objects.get(username=username)
+                except User.DoesNotExist:
+                    user = User(username=username, password=password)
+                    user.is_staff = True
+                    user.is_superuser = True
+                    user.save()
+                return user
         return None
 
     def get_user(self, user_id):

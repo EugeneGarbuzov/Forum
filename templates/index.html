@@ -5,17 +5,22 @@
     <title>Forum sections</title>
 </head>
 <body>
-{% if user.nickname %}
-    <p>h0i!!!,
-        <a href="{% url 'profile' user.login %}">
-            {{ user.nickname }}
-        </a>,
-        <a href="{% url 'logout' %}">
-            b0i!!!!1
-        </a>
-    </p>
-{% else %}
-    <table>
+
+<table>
+    {% if user.nickname %}
+        <tr>
+            <td>
+                <a href="{% url 'profile' user.username %}">
+                    {{ user.nickname }}
+                </a>
+            </td>
+            <td>
+                <a href="{% url 'logout' %}">
+                    gtfo
+                </a>
+            </td>
+        </tr>
+    {% else %}
         <tr>
             <td>
                 <a href="{% url 'login' %}">
@@ -28,39 +33,50 @@
                 </a>
             </td>
         </tr>
-    </table>
-{% endif %}
+    {% endif %}
+</table>
 
-{% if sections.rowcount != 0 %}
+{% if sections.count != 0 %}
     <ul>
         {% for section in sections %}
             <li>
-                <p>
-                    <a href="{% url 'section' section.Name %}">
-                        {{ section.Name }}
+                <h3>
+                    <a href="{% url 'section' section.name %}">
+                        {{ section.name }}
                     </a>
-                </p>
-
-                <p>{{ section.Date }}</p>
-
-                <p>{{ section.Role_Name }}</p>
-
-                <p>{{ section.Description }}</p>
-                {% if user.is_admin %}
-                    <a href="{% url 'remove_section' section.Name %}">
-                        Remove section
-                    </a>
-                {% endif %}
+                </h3>
             </li>
+            Created: {{ section.date }} Role: {{ section.role_name }}
+
+            <br/>
+            {{ section.description }}
+
+            {% if user.is_admin %}
+                <br/>
+                <a href="{% url 'remove_section' section.name %}">
+                    Remove section
+                </a>
+            {% endif %}
         {% endfor %}
     </ul>
 {% else %}
-    <p>No sections yet.</p>
+    <h3>
+        No sections yet.
+    </h3>
 {% endif %}
+
+
 {% if user.is_admin %}
-    <a href="{% url 'add_section' %}">
-        Add Section
-    </a>
+    <table>
+        <tr>
+            <td>
+                <a href="{% url 'add_section' %}">
+                    Add Section
+                </a>
+            </td>
+        </tr>
+    </table>
 {% endif %}
+
 </body>
 </html>

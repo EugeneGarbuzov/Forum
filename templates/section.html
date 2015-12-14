@@ -10,16 +10,19 @@
             {% for topic in topics %}
             <li>
                 <p>
-                    <a href="{% url 'topic' topic.SectionName topic.Name %}">
-                        {{ topic.Name }}
+                    <a href="{% url 'topic' topic.sectionname topic.name %}">
+                        {{ topic.name }}
                     </a>
                 </p>
-                <p>{{ topic.Nickname }}</p>
-                <p>{{ topic.Date }}</p>
-                <p>{{ topic.Description }}</p>
 
-                <p> Tags:
-                    {% for tag in topic.Tags %}
+                <p>{{ topic.nickname }}</p>
+
+                <p>{{ topic.date }}</p>
+
+                <p>{{ topic.description }}</p>
+
+                <p> tags:
+                    {% for tag in topic.tags %}
                         {{ tag }}
                     {% endfor %}
                 </p>
