@@ -252,14 +252,6 @@ def add_topic(request, section_name):
 
                     elif request.method == 'POST':
                         try:
-                            if not request.POST['name']:
-                                raise ValueError('Topic name cannot be empty.')
-
-                            cursor.execute('''select name from topics;''')
-                            existing_topics = (row[0] for row in cursor.fetchall())
-                            if request.POST['name'] in existing_topics:
-                                raise ValueError('Such topic already exists.')
-
                             cursor.execute('''insert into topics(section_id, user_id, name, date, description)
                                               select section_id, user_id, %s, now(), %s
                                               from sections, users
@@ -267,8 +259,8 @@ def add_topic(request, section_name):
                                               and username = %s;''',
                                            (request.POST['name'], request.POST['description'], section_name, username))
 
-                            if request.POST['tags'] and not request.POST['tags'].isspace():
-                                tags = tuple(set(request.POST['tags'].split()))
+                            if request.POST['tags']:
+                                tags = set(request.POST['tags'].split())
                                 cursor.execute('''select tag_name from tags;''')
                                 existing_tags = (row[0] for row in cursor.fetchall())
                                 for tag in tags:
