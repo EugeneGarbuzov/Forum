@@ -6,6 +6,12 @@
 </head>
 <body>
 
+<p>
+    <a href="{% url 'index' %}">
+        Back to sections list
+    </a>
+</p>
+
 <table>
     <tr>
         <td>
@@ -20,33 +26,33 @@
 <ul>
     {% for topic in topics %}
         <li>
-            <h3>
-                <a href="{% url 'topic' topic.section_name topic.name %}">
-                    {{ topic.name }}
-                </a>
-            </h3>
-        </li>
-        Created: {{ topic.date }}
-        <br/>
-
-        Author:
-        <a href="{% url 'profile' topic.username %}">
-            {{ topic.nickname }}
-        </a>
-        <br/>
-
-        Tags:
-        {% for tag in topic.tags %}
-            {{ tag }}
-        {% endfor %}
-
-        {% if user.is_moderator %}
+                <h3>
+                    <a href="{% url 'topic' topic.section_name topic.name %}">
+                        {{ topic.name }}
+                    </a>
+                </h3>
+            Created: {{ topic.date }}
             <br/>
-            <a href="{% url 'remove_topic' section_name topic.name %}">
-                Remove kebab
-            </a>
-        {% endif %}
 
+            Author:
+            <a href="{% url 'profile' topic.username %}">
+                {{ topic.nickname }}
+            </a>
+            <br/>
+
+            Tags:
+            {% for tag in topic.tags %}
+                {{ tag }}
+            {% endfor %}
+
+            {% if user.is_moderator %}
+                <br/>
+                <a href="{% url 'remove_topic' section_name topic.name %}">
+                    Remove kebab
+                </a>
+            {% endif %}
+
+        </li>
     {% endfor %}
 </ul>
 

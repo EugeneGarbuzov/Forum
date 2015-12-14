@@ -43,7 +43,7 @@ def register(request):
                                (request.POST['username'], request.POST['password'], request.POST['email'],
                                 request.POST['nickname'], request.POST['full_name'],
                                 request.POST['status'], request.POST['signature']))
-                user = auth.authenticate(username=request.POST['login'], password=request.POST['password'])
+                user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
                 auth.login(request, user)
                 return HttpResponseRedirect(reverse('index'))
         except:
