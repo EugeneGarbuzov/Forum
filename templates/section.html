@@ -6,11 +6,16 @@
 </head>
 <body>
 
-<p>
-    <a href="{% url 'index' %}">
-        Back to sections list
-    </a>
-</p>
+
+<table>
+    <tr>
+        <td>
+            <a href="{% url 'index' %}">
+                Back to sections list
+            </a>
+        </td>
+    </tr>
+</table>
 
 <table>
     <tr>
@@ -26,11 +31,11 @@
 <ul>
     {% for topic in topics %}
         <li>
-                <h3>
-                    <a href="{% url 'topic' topic.section_name topic.name %}">
-                        {{ topic.name }}
-                    </a>
-                </h3>
+            <h3>
+                <a href="{% url 'topic' topic.section_name topic.name %}">
+                    {{ topic.name }}
+                </a>
+            </h3>
             Created: {{ topic.date }}
             <br/>
 
