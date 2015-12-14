@@ -10,8 +10,12 @@ urlpatterns = [
     url(r'^edit_profile/$', views.edit_profile, name='edit_profile'),
 
     url(r'^$', views.index, name='index'),
-    url(r'^add/$', views.add_section, name='add_section'),
-    url(r'^remove/(?P<section_name>[A-Za-z0-9_]+)$', views.remove_section, name='remove_section'),
+    url(r'^add$', views.add_section, name='add_section'),
+    url(r'^remove(?P<section_name>[A-Za-z0-9_]+)$', views.remove_section, name='remove_section'),
+
+    url(r'^(?P<section_name>[A-Za-z0-9_]+)/add$', views.add_topic, name='add_topic'),
+    url(r'^(?P<section_name>[A-Za-z0-9_]+)/remove/(?P<topic_name>[A-Za-z0-9_]+)$', views.remove_topic,
+        name='remove_topic'),
 
     url(r'^(?P<section_name>[A-Za-z0-9_]+)/$', views.section, name='section'),
     url(r'^(?P<section_name>[A-Za-z0-9_]+)/(?P<topic_name>[A-Za-z0-9_]+)$', views.topic, name='topic')

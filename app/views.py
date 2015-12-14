@@ -105,7 +105,7 @@ def index(request):
             nickname, role = cursor.fetchone()
         else:
             nickname = ''
-            role = 'regular'
+            role = 'newbie'
 
         roles = check_roles(role)
 
@@ -183,26 +183,26 @@ def section(request, section_name):
                               where roles.role_id = users.role_id
                               and username = %s;''', username)
             user_role = cursor.fetchone()[0]
-
-            cursor.execute('''select role_name
-                          from sections, roles
-                          where roles.role_id = sections.role_id
-                          and name = %s;''', section_name)
-            section_role = cursor.fetchone()[0]
-
-            if section_role not in check_roles(user_role):
-                return HttpResponseRedirect(reverse('index'))
-
-            cursor.execute('''select username
-                              from users, sections, sections_users
-                              where users.user_id = sections_users.user_id
-                              and sections_users.section_id = sections.section_id
-                              and name = %s;''', section_name)
-            moderators = (row[0] for row in cursor.fetchall())
-
-            is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
         else:
-            is_moderator = False
+            user_role = 'newbie'
+
+        cursor.execute('''select role_name
+                      from sections, roles
+                      where roles.role_id = sections.role_id
+                      and name = %s;''', section_name)
+        section_role = cursor.fetchone()[0]
+
+        if section_role not in check_roles(user_role):
+            return HttpResponseRedirect(reverse('index'))
+
+        cursor.execute('''select username
+                          from users, sections, sections_users
+                          where users.user_id = sections_users.user_id
+                          and sections_users.section_id = sections.section_id
+                          and name = %s;''', section_name)
+        moderators = (row[0] for row in cursor.fetchall())
+
+        is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
 
         cursor.execute('''select t.name, t.description, t.date, u.nickname, u.username, s.name as section_name
                           from topics as t, users as u, sections as s
@@ -219,9 +219,60 @@ def section(request, section_name):
             topic['tags'] = (row[0] for row in cursor.fetchall())
 
     context = {'user': {'is_moderator': is_moderator},
+               'section_name': section_name,
                'topics': topics}
 
     return render(request, 'section.html', context)
+
+
+def add_topic(request, section_name):
+    username = request.user.username
+
+    with connection.cursor() as cursor:
+        if username:
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+        else:
+            user_role = 'newbie'
+
+        cursor.execute('''select role_name
+                      from sections, roles
+                      where roles.role_id = sections.role_id
+                      and name = %s;''', section_name)
+        section_role = cursor.fetchone()[0]
+
+        if section_role not in check_roles(user_role):
+            return HttpResponseRedirect(reverse('index'))
+
+        cursor.execute('''select username
+                          from users, sections, sections_users
+                          where users.user_id = sections_users.user_id
+                          and sections_users.section_id = sections.section_id
+                          and name = %s;''', section_name)
+        moderators = (row[0] for row in cursor.fetchall())
+
+        if user_role == 'admin' or (user_role == 'moderator' and username in moderators):
+            if request.method == 'GET':
+                return render(request, 'add_topic.html', {'section_name': section_name})
+            elif request.method == 'POST':
+                try:
+                    cursor.execute('''insert into topics(section_id, user_id, name, date, description)
+                                      select section_id, user_id, %s, now(), %s
+                                      from sections, users
+                                      where name = %s
+                                      and username = %s;''',
+                                   (request.POST['name'], request.POST['description'], section_name, username))
+                except:
+                    return render(request, 'add_section.html', {'section_name': section_name, 'error': 1})
+
+    return HttpResponseRedirect(reverse('section', args=(section_name,)))
+
+
+def remove_topic(request, section_name, topic_name):
+    return None
 
 
 def topic(request, section_name, topic_name):

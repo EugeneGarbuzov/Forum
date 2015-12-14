@@ -6,6 +6,17 @@
 </head>
 <body>
 
+<table>
+    <tr>
+        <td>
+            Section:
+        </td>
+        <td>
+            {{ section_name }}
+        </td>
+    </tr>
+</table>
+
 <ul>
     {% for topic in topics %}
         <li>
@@ -16,11 +27,14 @@
             </h3>
         </li>
         Created: {{ topic.date }}
+        <br/>
+
         Author:
         <a href="{% url 'profile' topic.username %}">
             {{ topic.nickname }}
         </a>
         <br/>
+
         Tags:
         {% for tag in topic.tags %}
             {{ tag }}
@@ -28,7 +42,7 @@
 
         {% if user.is_moderator %}
             <br/>
-            <a href="{% url 'remove_topic' topic.name %}">
+            <a href="{% url 'remove_topic' section_name topic.name %}">
                 Remove kebab
             </a>
         {% endif %}
@@ -40,7 +54,7 @@
     <table>
         <tr>
             <td>
-                <a href="{% url 'add_topic' %}">
+                <a href="{% url 'add_topic' section_name %}">
                     Add Topic
                 </a>
             </td>

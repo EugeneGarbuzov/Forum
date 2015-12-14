@@ -45,17 +45,20 @@
                 </a>
             </h3>
         </li>
-        Created: {{ section.date }} Role: {{ section.role_name }}
-
+        Created: {{ section.date }}
         <br/>
+
+        Category: {{ section.role_name }}
+        <br/>
+
         Moderators:
         {% for moderator in section.moderators %}
             <a href="{% url 'profile' moderator.username %}">
                 {{ moderator.nickname }}
             </a>
         {% endfor %}
-
         <br/>
+
         Description:
         {{ section.description }}
 
