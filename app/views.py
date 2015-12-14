@@ -228,51 +228,70 @@ def section(request, section_name):
 def add_topic(request, section_name):
     username = request.user.username
 
-    with connection.cursor() as cursor:
-        if username:
+    if username:
+        with connection.cursor() as cursor:
+
             cursor.execute('''select role_name
                               from users, roles
                               where roles.role_id = users.role_id
                               and username = %s;''', username)
             user_role = cursor.fetchone()[0]
-        else:
-            user_role = 'newbie'
 
-        cursor.execute('''select role_name
-                      from sections, roles
-                      where roles.role_id = sections.role_id
-                      and name = %s;''', section_name)
-        section_role = cursor.fetchone()[0]
+            if user_role in ('admin', 'moderator'):
 
-        if section_role not in check_roles(user_role):
-            return HttpResponseRedirect(reverse('index'))
+                cursor.execute('''select username
+                                  from users, sections, sections_users
+                                  where users.user_id = sections_users.user_id
+                                  and sections_users.section_id = sections.section_id
+                                  and name = %s;''', section_name)
+                moderators = (row[0] for row in cursor.fetchall())
 
-        cursor.execute('''select username
-                          from users, sections, sections_users
-                          where users.user_id = sections_users.user_id
-                          and sections_users.section_id = sections.section_id
-                          and name = %s;''', section_name)
-        moderators = (row[0] for row in cursor.fetchall())
+                if user_role == 'admin' or username in moderators:
+                    if request.method == 'GET':
+                        return render(request, 'add_topic.html', {'section_name': section_name})
 
-        if user_role == 'admin' or (user_role == 'moderator' and username in moderators):
-            if request.method == 'GET':
-                return render(request, 'add_topic.html', {'section_name': section_name})
-            elif request.method == 'POST':
-                try:
-                    cursor.execute('''insert into topics(section_id, user_id, name, date, description)
-                                      select section_id, user_id, %s, now(), %s
-                                      from sections, users
-                                      where name = %s
-                                      and username = %s;''',
-                                   (request.POST['name'], request.POST['description'], section_name, username))
-                except:
-                    return render(request, 'add_section.html', {'section_name': section_name, 'error': 1})
+                    elif request.method == 'POST':
+                        try:
+                            cursor.execute('''insert into topics(section_id, user_id, name, date, description)
+                                              select section_id, user_id, %s, now(), %s
+                                              from sections, users
+                                              where name = %s
+                                              and username = %s;''',
+                                           (request.POST['name'], request.POST['description'], section_name, username))
+
+                            # todo обработать теги тут
+
+                        except:
+                            return render(request, 'add_section.html', {'section_name': section_name, 'error': 1})
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
 
 def remove_topic(request, section_name, topic_name):
-    return None
+    username = request.user.username
+
+    if username:
+        with connection.cursor() as cursor:
+
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+
+            if user_role in ('admin', 'moderator'):
+
+                cursor.execute('''select username
+                          from users, sections, sections_users
+                          where users.user_id = sections_users.user_id
+                          and sections_users.section_id = sections.section_id
+                          and name = %s;''', section_name)
+                moderators = (row[0] for row in cursor.fetchall())
+
+                if user_role == 'admin' or username in moderators:
+                    cursor.execute('''delete from topics where name = %s''', topic_name)
+
+    return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
 
 def topic(request, section_name, topic_name):
