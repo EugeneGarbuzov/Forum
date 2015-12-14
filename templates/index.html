@@ -36,35 +36,37 @@
     {% endif %}
 </table>
 
-{% if sections.count != 0 %}
-    <ul>
-        {% for section in sections %}
-            <li>
-                <h3>
-                    <a href="{% url 'section' section.name %}">
-                        {{ section.name }}
-                    </a>
-                </h3>
-            </li>
-            Created: {{ section.date }} Role: {{ section.role_name }}
-
-            <br/>
-            {{ section.description }}
-
-            {% if user.is_admin %}
-                <br/>
-                <a href="{% url 'remove_section' section.name %}">
-                    Remove section
+<ul>
+    {% for section in sections %}
+        <li>
+            <h3>
+                <a href="{% url 'section' section.name %}">
+                    {{ section.name }}
                 </a>
-            {% endif %}
-        {% endfor %}
-    </ul>
-{% else %}
-    <h3>
-        No sections yet.
-    </h3>
-{% endif %}
+            </h3>
+        </li>
+        Created: {{ section.date }} Role: {{ section.role_name }}
 
+        <br/>
+        Moderators:
+        {% for moderator in section.moderators %}
+            <a href="{% url 'profile' moderator.username %}">
+                {{ moderator.nickname }}
+            </a>
+        {% endfor %}
+
+        <br/>
+        Description:
+        {{ section.description }}
+
+        {% if user.is_admin %}
+            <br/>
+            <a href="{% url 'remove_section' section.name %}">
+                Remove section
+            </a>
+        {% endif %}
+    {% endfor %}
+</ul>
 
 {% if user.is_admin %}
     <table>

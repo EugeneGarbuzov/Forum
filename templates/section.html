@@ -5,32 +5,48 @@
     <title></title>
 </head>
 <body>
-{% if topics.rowcount != 0 %}
-        <ul>
-            {% for topic in topics %}
-            <li>
-                <p>
-                    <a href="{% url 'topic' topic.sectionname topic.name %}">
-                        {{ topic.name }}
-                    </a>
-                </p>
 
-                <p>{{ topic.nickname }}</p>
-
-                <p>{{ topic.date }}</p>
-
-                <p>{{ topic.description }}</p>
-
-                <p> tags:
-                    {% for tag in topic.tags %}
-                        {{ tag }}
-                    {% endfor %}
-                </p>
-            </li>
+<ul>
+    {% for topic in topics %}
+        <li>
+            <h3>
+                <a href="{% url 'topic' topic.section_name topic.name %}">
+                    {{ topic.name }}
+                </a>
+            </h3>
+        </li>
+        Created: {{ topic.date }}
+        Author:
+        <a href="{% url 'profile' topic.username %}">
+            {{ topic.nickname }}
+        </a>
+        <br/>
+        Tags:
+        {% for tag in topic.tags %}
+            {{ tag }}
         {% endfor %}
-        </ul>
-    {% else %}
-        <p>No topics yet.</p>
-    {% endif %}
+
+        {% if user.is_moderator %}
+            <br/>
+            <a href="{% url 'remove_topic' topic.name %}">
+                Remove kebab
+            </a>
+        {% endif %}
+
+    {% endfor %}
+</ul>
+
+{% if user.is_moderator %}
+    <table>
+        <tr>
+            <td>
+                <a href="{% url 'add_topic' %}">
+                    Add Topic
+                </a>
+            </td>
+        </tr>
+    </table>
+{% endif %}
+
 </body>
 </html>

@@ -96,20 +96,19 @@ def edit_profile(request):
 def index(request):
     username = request.user.username
 
-    if username:
-        with connection.cursor() as cursor:
-            cursor.execute('''select username, nickname, role_name
+    with connection.cursor() as cursor:
+        if username:
+            cursor.execute('''select nickname, role_name
                               from users, roles
                               where roles.role_id = users.role_id
                               and username = %s;''', username)
-            username, nickname, role = cursor.fetchone()
-    else:
-        nickname = ''
-        role = 'regular'
+            nickname, role = cursor.fetchone()
+        else:
+            nickname = ''
+            role = 'regular'
 
-    roles = check_roles(role)
+        roles = check_roles(role)
 
-    with connection.cursor() as cursor:
         cursor.execute('''select s.name, s.description, s.date,
                           (select role_name from roles where roles.role_id = s.role_id)  as role_name
                           from sections as s, roles as r
@@ -117,8 +116,17 @@ def index(request):
                           and r.role_name in %s;''', [tuple(roles)])
         sections = fetch_to_dict(cursor)
 
+        for section in sections:
+            cursor.execute('''select username, nickname
+                              from users, sections, sections_users
+                              where users.user_id = sections_users.user_id
+                              and sections_users.section_id = sections.section_id
+                              and name = %s;''', section['name'])
+            section['moderators'] = fetch_to_dict(cursor)
+
     context = {'user': {'nickname': nickname, 'username': username, 'is_admin': role == 'admin'},
                'sections': sections}
+
     return render(request, 'index.html', context)
 
 
@@ -166,23 +174,53 @@ def remove_section(request, section_name):
 
 
 def section(request, section_name):
+    username = request.user.username
+
     with connection.cursor() as cursor:
-        cursor.execute('''select t.name, t.description, t.date, u.nickname, s.name as sectionname
+        if username:
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+
+            cursor.execute('''select role_name
+                          from sections, roles
+                          where roles.role_id = sections.role_id
+                          and name = %s;''', section_name)
+            section_role = cursor.fetchone()[0]
+
+            if section_role not in check_roles(user_role):
+                return HttpResponseRedirect(reverse('index'))
+
+            cursor.execute('''select username
+                              from users, sections, sections_users
+                              where users.user_id = sections_users.user_id
+                              and sections_users.section_id = sections.section_id
+                              and name = %s;''', section_name)
+            moderators = (row[0] for row in cursor.fetchall())
+
+            is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
+        else:
+            is_moderator = False
+
+        cursor.execute('''select t.name, t.description, t.date, u.nickname, u.username, s.name as section_name
                           from topics as t, users as u, sections as s
                           where u.user_id = t.user_id
                           and t.section_id = s.section_id
                           and s.name = %s;''', section_name)
         topics = fetch_to_dict(cursor)
 
-    for topic in topics:
-        with connection.cursor() as cursor:
+        for topic in topics:
             cursor.execute('''select tag_name from tags_topics
                               join tags on tags.tag_id = tags_topics.tag_id
                               join topics on topics.topic_id = tags_topics.topic_id
                               where name = %s;''', topic['name'])
-            topic['tags'] = tuple(row[0] for row in cursor.fetchall())
+            topic['tags'] = (row[0] for row in cursor.fetchall())
 
-    context = {'topics': topics}
+    context = {'user': {'is_moderator': is_moderator},
+               'topics': topics}
+
     return render(request, 'section.html', context)
 
 
