@@ -260,6 +260,7 @@ def add_topic(request, section_name):
                                            (request.POST['name'], request.POST['description'], section_name, username))
 
                             # todo обработать теги тут
+                            print(request.POST['tags'])
 
                         except:
                             return render(request, 'add_section.html', {'section_name': section_name, 'error': 1})
