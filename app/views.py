@@ -80,7 +80,7 @@ def profile(request, username):
             if moderated_sections:
                 moderated_sections = moderated_sections[0]
 
-            context = {'user': user, 'trophies': trophies, 'moderated_sections': moderated_sections}
+            context = {'user_info': user, 'trophies': trophies, 'moderated_sections': moderated_sections}
             return render(request, 'profile.html', context)
     except:
         return HttpResponseRedirect(reverse('index'))

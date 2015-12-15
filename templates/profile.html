@@ -12,7 +12,7 @@
             Nickname:
         </td>
         <td>
-            {{ user.nickname }}
+            {{ user_info.nickname }}
         </td>
     </tr>
     <tr>
@@ -20,7 +20,7 @@
             Full name:
         </td>
         <td>
-            {{ user.full_name }}
+            {{ user_info.full_name }}
         </td>
     </tr>
     <tr>
@@ -28,7 +28,7 @@
             Status:
         </td>
         <td>
-            {{ user.status }}
+            {{ user_info.status }}
         </td>
     </tr>
     <tr>
@@ -36,7 +36,7 @@
             Signature:
         </td>
         <td>
-            {{ user.signature }}
+            {{ user_info.signature }}
         </td>
     </tr>
     <tr>
@@ -44,7 +44,7 @@
             Role:
         </td>
         <td>
-            {{ user.role_name }}
+            {{ user_info.role_name }}
         </td>
     </tr>
 
@@ -53,7 +53,7 @@
             Rank:
         </td>
         <td>
-            {{ user.rank_name }} ({{ user.bonus_rating }})
+            {{ user_info.rank_name }} ({{ user_info.bonus_rating }})
         </td>
     </tr>
 
@@ -102,7 +102,7 @@
         </tr>
     {% endif %}
 
-    {% if user.get_username == username %}
+    {% if user.get_username == user_info.username %}
         <tr>
             <td>
                 <a href="{% url 'edit_profile' %}">
