@@ -239,7 +239,8 @@ def section(request, section_name):
                               where name = %s;''', topic['name'])
             topic['tags'] = (row[0] for row in cursor.fetchall())
 
-    context = {'is_moderator': is_moderator,
+    context = {'can_create_topic': section_role in check_roles(user_role, 'write'),
+               'is_moderator': is_moderator,
                'section_name': section_name,
                'topics': topics}
 
@@ -249,51 +250,48 @@ def section(request, section_name):
 def add_topic(request, section_name):
     username = request.user.username
 
-    if username:
-        with connection.cursor() as cursor:
-
+    with connection.cursor() as cursor:
+        if username:
             cursor.execute('''select role_name
                               from users, roles
                               where roles.role_id = users.role_id
                               and username = %s;''', username)
             user_role = cursor.fetchone()[0]
+        else:
+            user_role = 'newbie'
 
-            if user_role in ('admin', 'moderator'):
+        cursor.execute('''select role_name
+                          from sections, roles
+                          where roles.role_id = sections.role_id
+                          and name = %s;''', section_name)
+        section_role = cursor.fetchone()[0]
 
-                cursor.execute('''select username
-                                  from users, sections, sections_users
-                                  where users.user_id = sections_users.user_id
-                                  and sections_users.section_id = sections.section_id
-                                  and name = %s;''', section_name)
-                moderators = (row[0] for row in cursor.fetchall())
+        if section_role in check_roles(user_role):
+            if request.method == 'GET':
+                return render(request, 'add_topic.html', {'section_name': section_name})
 
-                if user_role == 'admin' or username in moderators:
-                    if request.method == 'GET':
-                        return render(request, 'add_topic.html', {'section_name': section_name})
+            elif request.method == 'POST':
+                try:
+                    cursor.execute('''insert into topics(section_id, user_id, name, date, description)
+                                      select section_id, user_id, %s, now(), %s
+                                      from sections, users
+                                      where name = %s
+                                      and username = %s;''',
+                                   (request.POST['name'], request.POST['description'], section_name, username))
 
-                    elif request.method == 'POST':
-                        try:
-                            cursor.execute('''insert into topics(section_id, user_id, name, date, description)
-                                              select section_id, user_id, %s, now(), %s
-                                              from sections, users
-                                              where name = %s
-                                              and username = %s;''',
-                                           (request.POST['name'], request.POST['description'], section_name, username))
-
-                            if request.POST['tags']:
-                                tags = set(request.POST['tags'].split())
-                                cursor.execute('''select tag_name from tags;''')
-                                existing_tags = (row[0] for row in cursor.fetchall())
-                                for tag in tags:
-                                    if tag not in existing_tags:
-                                        cursor.execute('''insert into tags(tag_name) values (%s);''', tag)
-                                    cursor.execute('''insert into tags_topics(tag_id, topic_id)
-                                                      select tag_id, topic_id from tags, topics
-                                                      where tag_name = %s
-                                                      and name = %s;''', (tag, request.POST['name']))
-
-                        except:
-                            return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
+                    if request.POST['tags']:
+                        tags = set(request.POST['tags'].split())
+                        cursor.execute('''SELECT tag_name FROM tags;''')
+                        existing_tags = (row[0] for row in cursor.fetchall())
+                        for tag in tags:
+                            if tag not in existing_tags:
+                                cursor.execute('''insert into tags(tag_name) values (%s);''', tag)
+                            cursor.execute('''insert into tags_topics(tag_id, topic_id)
+                                              select tag_id, topic_id from tags, topics
+                                              where tag_name = %s
+                                              and name = %s;''', (tag, request.POST['name']))
+                except:
+                    return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
@@ -344,35 +342,35 @@ def topic(request, section_name, topic_name):
                           and name = %s;''', section_name)
         section_role = cursor.fetchone()[0]
 
-        if section_role not in check_roles(user_role):
-            return HttpResponseRedirect(reverse('index'))
+        if section_role in check_roles(user_role):
+            cursor.execute('''select count(*) from topics where topics.name = %s;''', topic_name)
 
-        try:
-            cursor.execute('''select message_id, username, nickname, text, m.date, rating from messages as m
-                              join users as u on u.user_id = m.user_id
-                              join topics as t on t.topic_id = m.topic_id
-                              join sections as s on s.section_id = t.section_id
-                              where s.name = %s
-                              and t.name = %s;''', (section_name, topic_name))
-            messages = fetch_to_dict(cursor)
+            if cursor.fetchone()[0]:
+                cursor.execute('''select message_id, username, nickname, text, messages.date, rating
+                                  from messages, users, topics
+                                  where users.user_id = messages.user_id
+                                  and messages.topic_id = topics.topic_id
+                                  and topics.name = %s;''', topic_name)
+                messages = fetch_to_dict(cursor)
 
-            cursor.execute('''select username
-                              from users, sections, sections_users
-                              where users.user_id = sections_users.user_id
-                              and sections_users.section_id = sections.section_id
-                              and name = %s;''', section_name)
-            moderators = (row[0] for row in cursor.fetchall())
+                cursor.execute('''select username
+                                  from users, sections, sections_users
+                                  where users.user_id = sections_users.user_id
+                                  and sections_users.section_id = sections.section_id
+                                  and name = %s;''', section_name)
+                moderators = (row[0] for row in cursor.fetchall())
 
-            is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
-            can_add_message = section_role in check_roles(user_role, mode='write') and username
+                is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
+                can_add_message = section_role in check_roles(user_role, mode='write') and username
 
-            context = {'section_name': section_name, 'topic_name': topic_name,
-                       'messages': messages,
-                       'user': {'is_moderator': is_moderator, 'username': username, 'can_add_message': can_add_message}}
+                context = {'section_name': section_name, 'topic_name': topic_name,
+                           'messages': messages,
+                           'user': {'is_moderator': is_moderator, 'username': username,
+                                    'can_add_message': can_add_message}}
 
-            return render(request, 'topic.html', context)
-        except:
-            return HttpResponseRedirect(reverse('index'))
+                return render(request, 'topic.html', context)
+
+    return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
 
 def add_message(request, section_name, topic_name):
