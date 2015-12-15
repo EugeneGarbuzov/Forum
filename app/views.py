@@ -1,7 +1,7 @@
 from django.contrib import auth
 from django.core.urlresolvers import reverse
 from django.db import connection
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
 from Forum.tools import fetch_to_dict, check_roles
@@ -218,7 +218,7 @@ def section(request, section_name):
                               where name = %s;''', topic['name'])
             topic['tags'] = (row[0] for row in cursor.fetchall())
 
-    context = {'user': {'is_moderator': is_moderator},
+    context = {'is_moderator': is_moderator,
                'section_name': section_name,
                'topics': topics}
 
@@ -252,14 +252,6 @@ def add_topic(request, section_name):
 
                     elif request.method == 'POST':
                         try:
-                            if not request.POST['name']:
-                                raise ValueError('Topic name cannot be empty.')
-
-                            cursor.execute('''select name from topics;''')
-                            existing_topics = (row[0] for row in cursor.fetchall())
-                            if request.POST['name'] in existing_topics:
-                                raise ValueError('Such topic already exists.')
-
                             cursor.execute('''insert into topics(section_id, user_id, name, date, description)
                                               select section_id, user_id, %s, now(), %s
                                               from sections, users
@@ -267,9 +259,9 @@ def add_topic(request, section_name):
                                               and username = %s;''',
                                            (request.POST['name'], request.POST['description'], section_name, username))
 
-                            if request.POST['tags'] and not request.POST['tags'].isspace():
-                                tags = tuple(set(request.POST['tags'].split()))
-                                cursor.execute('''select tag_name from tags;''')
+                            if request.POST['tags']:
+                                tags = set(request.POST['tags'].split())
+                                cursor.execute('''SELECT tag_name FROM tags;''')
                                 existing_tags = (row[0] for row in cursor.fetchall())
                                 for tag in tags:
                                     if tag not in existing_tags:
@@ -311,38 +303,31 @@ def remove_topic(request, section_name, topic_name):
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
-# todo здесь, возможно, баг при просмотре неавторизованным пользователем
-def topic(request, section_name, topic_name):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute('''select count(*) from sections
-                              where name = %s;''', section_name)
-            number_of_sections = cursor.fetchone()[0]
-            if not number_of_sections:
-                raise ValueError('No such section')
 
-            username = request.user.username
+def topic(request, section_name, topic_name):
+    username = request.user.username
+
+    with connection.cursor() as cursor:
+        if username:
             cursor.execute('''select role_name
                               from users, roles
                               where roles.role_id = users.role_id
                               and username = %s;''', username)
             user_role = cursor.fetchone()[0]
-            cursor.execute('''select role_name from sections
-                              join roles on roles.role_id = sections.role_id
-                              where sections.name = %s;''', section_name)
-            section_role = cursor.fetchone()[0]
-            if section_role not in check_roles(user_role):
-                raise Exception('Current user has no access to current section.')
+        else:
+            user_role = 'newbie'
 
-            cursor.execute('''select * from topics
-                              join sections on sections.section_id = topics.section_id
-                              where sections.name = %s
-                              and topics.name = %s;''', (section_name, topic_name))
-            number_of_topics = len(cursor.fetchall())
-            if not number_of_topics:
-                raise ValueError('No such topic in current section.')
+        cursor.execute('''select role_name
+                          from sections, roles
+                          where roles.role_id = sections.role_id
+                          and name = %s;''', section_name)
+        section_role = cursor.fetchone()[0]
 
-            cursor.execute('''select username, text, m.date, rating from messages as m
+        if section_role not in check_roles(user_role):
+            return HttpResponseRedirect(reverse('index'))
+
+        try:
+            cursor.execute('''select message_id, username, nickname, text, m.date, rating from messages as m
                               join users as u on u.user_id = m.user_id
                               join topics as t on t.topic_id = m.topic_id
                               join sections as s on s.section_id = t.section_id
@@ -350,9 +335,140 @@ def topic(request, section_name, topic_name):
                               and t.name = %s;''', (section_name, topic_name))
             messages = fetch_to_dict(cursor)
 
-            context = {'section_name': section_name, 'topic_name': topic_name, 'messages': messages}
+            cursor.execute('''select username
+                              from users, sections, sections_users
+                              where users.user_id = sections_users.user_id
+                              and sections_users.section_id = sections.section_id
+                              and name = %s;''', section_name)
+            moderators = (row[0] for row in cursor.fetchall())
+
+            is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
+            can_add_message = section_role in check_roles(user_role, mode='write') and username
+
+            context = {'section_name': section_name, 'topic_name': topic_name,
+                       'messages': messages,
+                       'user': {'is_moderator': is_moderator, 'username': username, 'can_add_message': can_add_message}}
 
             return render(request, 'topic.html', context)
+        except:
+            return HttpResponseRedirect(reverse('index'))
 
-    except:
-        return HttpResponseRedirect(reverse('index'))
+
+def add_message(request, section_name, topic_name):
+    username = request.user.username
+
+    if username and request.method == 'POST':
+        with connection.cursor() as cursor:
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+
+            cursor.execute('''select role_name
+                              from sections, roles
+                              where roles.role_id = sections.role_id
+                              and name = %s;''', section_name)
+            section_role = cursor.fetchone()[0]
+
+            if section_role in check_roles(user_role, mode='write'):
+                cursor.execute('''insert into messages (date, text, rating, user_id, topic_id)
+                                  select now(), %s, 0, users.user_id, topics.topic_id
+                                  from users, topics
+                                  where users.username = %s
+                                  and topics.name = %s;''',
+                               (request.POST['text'], username, topic_name))
+
+    return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
+
+
+def like_message(request, section_name, topic_name, message_id):
+    username = request.user.username
+
+    if username:
+        with connection.cursor() as cursor:
+            cursor.execute('''select bonus_rating
+                              from users, ranks
+                              where ranks.rank_id = users.rank_id
+                              and username = %s;''', username)
+            bonus_rating = cursor.fetchone()[0]
+
+            cursor.execute('''update messages set rating = messages.rating + %s
+                            where message_id = %s;''', (bonus_rating, message_id))
+
+    return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
+
+
+def remove_message(request, section_name, topic_name, message_id):
+    username = request.user.username
+
+    if username:
+        with connection.cursor() as cursor:
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+
+            cursor.execute('''select username
+                              from messages, users
+                              where users.user_id = messages.user_id
+                              and messages.message_id = %s;''', message_id)
+            message_creator = cursor.fetchone()[0]
+
+            cursor.execute('''select username
+                              from users, sections, sections_users
+                              where users.user_id = sections_users.user_id
+                              and sections_users.section_id = sections.section_id
+                              and name = %s;''', section_name)
+            moderators = (row[0] for row in cursor.fetchall())
+
+            if username == message_creator or user_role == 'admin' or (
+                            user_role == 'moderator' and username in moderators):
+                cursor.execute('''delete from messages where message_id = %s''', message_id)
+
+    return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
+
+
+def edit_message(request, section_name, topic_name, message_id):
+    username = request.user.username
+
+    if username:
+        with connection.cursor() as cursor:
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+
+            cursor.execute('''select username
+                              from messages, users
+                              where users.user_id = messages.user_id
+                              and messages.message_id = %s;''', message_id)
+            message_creator = cursor.fetchone()[0]
+
+            cursor.execute('''select username
+                              from users, sections, sections_users
+                              where users.user_id = sections_users.user_id
+                              and sections_users.section_id = sections.section_id
+                              and name = %s;''', section_name)
+            moderators = (row[0] for row in cursor.fetchall())
+
+            if username == message_creator or user_role == 'admin' or (
+                            user_role == 'moderator' and username in moderators):
+                if request.method == 'GET':
+                    cursor.execute('''select message_id, username, nickname, text, messages.date, rating
+                                      from messages, users
+                                      where users.user_id = messages.user_id
+                                      and message_id = %s;''', message_id)
+
+                    message = fetch_to_dict(cursor)[0]
+                    context = {'section_name': section_name, 'topic_name': topic_name, 'message_id': message_id,
+                               'message': message}
+                    return render(request, 'edit_message.html', context)
+                elif request.method == 'POST':
+                    cursor.execute('''update messages set text = %s
+                                      where message_id = %s;''',
+                                   (request.POST['text'], message_id))
+
+    return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))

@@ -49,7 +49,7 @@
                 {{ tag }}
             {% endfor %}
 
-            {% if user.is_moderator %}
+            {% if is_moderator %}
                 <br/>
                 <a href="{% url 'remove_topic' section_name topic.name %}">
                     Remove kebab
@@ -60,7 +60,7 @@
     {% endfor %}
 </ul>
 
-{% if user.is_moderator %}
+{% if is_moderator %}
     <table>
         <tr>
             <td>

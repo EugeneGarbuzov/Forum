@@ -48,9 +48,6 @@
         Created: {{ section.date }}
         <br/>
 
-        Category: {{ section.role_name }}
-        <br/>
-
         Moderators:
         {% for moderator in section.moderators %}
             <a href="{% url 'profile' moderator.username %}">
@@ -59,11 +56,13 @@
         {% endfor %}
         <br/>
 
-        Description:
-        {{ section.description }}
+        Category: {{ section.role_name }}
+        <br/>
 
+        Description: {{ section.description }}
+        <br/>
         {% if user.is_admin %}
-            <br/>
+
             <a href="{% url 'remove_section' section.name %}">
                 Remove section
             </a>

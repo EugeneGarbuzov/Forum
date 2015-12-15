@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit message</title>
+</head>
+<body>
+
+<form method="post" action="{% url 'edit_message' section_name topic_name message_id %}">
+    {% csrf_token %}
+    <table>
+        <tr>
+            <td>
+                Date:
+            </td>
+            <td>
+                {{ message.date }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Author:
+            </td>
+            <td>
+                <a href="{% url 'profile' message.username %}">
+                    {{ message.nickname }}
+                </a>
+            </td>
+        </tr>
+        <tr>
+        <tr>
+            <td>
+                Likes:
+            </td>
+            <td>
+                {{ message.rating }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="text">Message: </label>
+            </td>
+            <td>
+                <textarea id="text" name="text">{{ message.text }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+            </td>
+            <td>
+                <input type="submit" value="Edit message"/>
+            </td>
+        </tr>
+    </table>
+</form>
+
+</body>
+</html>

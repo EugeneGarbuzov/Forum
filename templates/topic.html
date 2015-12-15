@@ -38,33 +38,63 @@
 <ul>
     {% for message in messages %}
         <li>
-            <p>{{ message.date }}</p>
-            <p>{{ message.username }}</p>
-            <p>{{ message.text }}</p>
-            <p>{{ message.rating }}</p>
-            <br />
-{#            {% if user.is_moderator %}#}
-{#                <br/>#}
-{#                <a href="{% url 'remove_topic' section_name topic.name %}">#}
-{#                    Remove kebab#}
-{#                </a>#}
-{#            {% endif %}#}
+            <h3>
+                {{ message.text }}
+            </h3>
+
+            Date: {{ message.date }}
+            <br/>
+
+            Author:
+            <a href="{% url 'profile' message.username %}">
+                {{ message.nickname }}
+            </a>
+            <br/>
+
+            <a href="{% url 'like_message' section_name topic_name message.message_id %}">
+                Like: {{ message.rating }}
+            </a>
+
+            <br/>
+
+            {% if user.is_moderator or user.username == message.username %}
+                <a href="{% url 'remove_message' section_name topic_name message.message_id %}">
+                    Remove
+                </a>
+
+                <br/>
+                <a href="{% url 'edit_message' section_name topic_name message.message_id %}">
+                    Edit
+                </a>
+            {% endif %}
 
         </li>
     {% endfor %}
 </ul>
 
-{#{% if user.is_moderator %}#}
-{#    <table>#}
-{#        <tr>#}
-{#            <td>#}
-{#                <a href="{% url 'add_topic' section_name %}">#}
-{#                    Add Topic#}
-{#                </a>#}
-{#            </td>#}
-{#        </tr>#}
-{#    </table>#}
-{#{% endif %}#}
+{% if user.can_add_message %}
+    <form method="post" action="{% url 'add_message' section_name topic_name %}">
+        {% csrf_token %}
+        <table>
+            <tr>
+                <td>
+                    <label for="text">Message: </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <textarea id="text" name="text"></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="submit" value="Add message"/>
+                </td>
+            </tr>
+        </table>
+    </form>
+{% endif %}
+
 
 </body>
 </html>

@@ -44,9 +44,9 @@ CREATE TABLE trophies
 
 CREATE TABLE tags
 (
-  tag_id            SERIAL,
+  tag_id   SERIAL,
 
-  tag_name          VARCHAR(30)      NOT NULL,
+  tag_name VARCHAR(30) NOT NULL,
 
   PRIMARY KEY (tag_id),
   UNIQUE (tag_name)
