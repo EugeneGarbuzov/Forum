@@ -55,12 +55,33 @@ def register(request):
 def profile(request, username):
     try:
         with connection.cursor() as cursor:
-            cursor.execute('''select username, nickname, full_name, date, status, signature, role_name
-                          from users, roles
-                          where users.role_id = roles.role_id
-                          and username = %s;''', username)
+            cursor.execute('''select username, nickname, full_name, date, status,
+                              signature, role_name, rank_name, bonus_rating
+                              from users, roles, ranks
+                              where users.role_id = roles.role_id
+                              and ranks.rank_id = users.rank_id
+                              and username = %s;''', username)
             user = fetch_to_dict(cursor)[0]
-            return render(request, 'profile.html', user)
+
+            cursor.execute('''select trophy_name, description
+                              from trophies, trophies_users, users
+                              where trophies.trophy_id = trophies_users.trophy_id
+                              and trophies_users.user_id = users.user_id
+                              and username = %s;''', username)
+            trophies = fetch_to_dict(cursor)
+
+            cursor.execute('''select sections.name
+                              from users, sections_users, sections
+                              where sections.section_id = sections_users.section_id
+                              and sections_users.user_id = users.user_id
+                              and username = %s;''', username)
+            moderated_sections = cursor.fetchall()
+
+            if moderated_sections:
+                moderated_sections = moderated_sections[0]
+
+            context = {'user': user, 'trophies': trophies, 'moderated_sections': moderated_sections}
+            return render(request, 'profile.html', context)
     except:
         return HttpResponseRedirect(reverse('index'))
 
@@ -261,7 +282,7 @@ def add_topic(request, section_name):
 
                             if request.POST['tags']:
                                 tags = set(request.POST['tags'].split())
-                                cursor.execute('''SELECT tag_name FROM tags;''')
+                                cursor.execute('''select tag_name from tags;''')
                                 existing_tags = (row[0] for row in cursor.fetchall())
                                 for tag in tags:
                                     if tag not in existing_tags:

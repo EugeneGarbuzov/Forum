@@ -12,7 +12,7 @@
             Nickname:
         </td>
         <td>
-            {{ nickname }}
+            {{ user.nickname }}
         </td>
     </tr>
     <tr>
@@ -20,7 +20,7 @@
             Full name:
         </td>
         <td>
-            {{ full_name }}
+            {{ user.full_name }}
         </td>
     </tr>
     <tr>
@@ -28,7 +28,7 @@
             Status:
         </td>
         <td>
-            {{ status }}
+            {{ user.status }}
         </td>
     </tr>
     <tr>
@@ -36,7 +36,7 @@
             Signature:
         </td>
         <td>
-            {{ signature }}
+            {{ user.signature }}
         </td>
     </tr>
     <tr>
@@ -44,9 +44,54 @@
             Role:
         </td>
         <td>
-            {{ role_name }}
+            {{ user.role_name }}
         </td>
     </tr>
+
+    {% if moderated_sections %}
+        <tr>
+            <td>
+                Moderated sections:
+            </td>
+            <td>
+                <table>
+                    {% for section in moderated_sections %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'section' section %}">
+                                    {{ section }}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+    {% endif %}
+
+    {% if trophies %}
+        <tr>
+            <td>
+                Trophies:
+            </td>
+            <td>
+
+                <table>
+                    {% for trophy in trophies %}
+                        <tr>
+                            <td>
+                                {{ trophy.trophy_name }}:
+                            </td>
+                            <td>
+                                {{ trophy.description }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+
+            </td>
+        </tr>
+    {% endif %}
 
     {% if user.get_username == username %}
         <tr>
