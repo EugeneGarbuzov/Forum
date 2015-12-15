@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Section {{ section_name }}, topic {{ topic_name }}</title>
+</head>
+<body>
+
+<table>
+    <tr>
+        <td>
+            <a href="{% url 'section' section_name %}">
+                Back to topics list
+            </a>
+        </td>
+    </tr>
+</table>
+
+<table>
+    <tr>
+        <td>
+            Section:
+        </td>
+        <td>
+            {{ section_name }}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Topic:
+        </td>
+        <td>
+            {{ topic_name }}
+        </td>
+    </tr>
+</table>
+
+<ul>
+    {% for message in messages %}
+        <li>
+            <p>{{ message.date }}</p>
+            <p>{{ message.username }}</p>
+            <p>{{ message.text }}</p>
+            <p>{{ message.rating }}</p>
+            <br />
+{#            {% if user.is_moderator %}#}
+{#                <br/>#}
+{#                <a href="{% url 'remove_topic' section_name topic.name %}">#}
+{#                    Remove kebab#}
+{#                </a>#}
+{#            {% endif %}#}
+
+        </li>
+    {% endfor %}
+</ul>
+
+{#{% if user.is_moderator %}#}
+{#    <table>#}
+{#        <tr>#}
+{#            <td>#}
+{#                <a href="{% url 'add_topic' section_name %}">#}
+{#                    Add Topic#}
+{#                </a>#}
+{#            </td>#}
+{#        </tr>#}
+{#    </table>#}
+{#{% endif %}#}
+
+</body>
+</html>

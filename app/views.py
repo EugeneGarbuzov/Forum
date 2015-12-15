@@ -252,6 +252,14 @@ def add_topic(request, section_name):
 
                     elif request.method == 'POST':
                         try:
+                            if not request.POST['name']:
+                                raise ValueError('Topic name cannot be empty.')
+
+                            cursor.execute('''select name from topics;''')
+                            existing_topics = (row[0] for row in cursor.fetchall())
+                            if request.POST['name'] in existing_topics:
+                                raise ValueError('Such topic already exists.')
+
                             cursor.execute('''insert into topics(section_id, user_id, name, date, description)
                                               select section_id, user_id, %s, now(), %s
                                               from sections, users
@@ -259,8 +267,8 @@ def add_topic(request, section_name):
                                               and username = %s;''',
                                            (request.POST['name'], request.POST['description'], section_name, username))
 
-                            if request.POST['tags']:
-                                tags = set(request.POST['tags'].split())
+                            if request.POST['tags'] and not request.POST['tags'].isspace():
+                                tags = tuple(set(request.POST['tags'].split()))
                                 cursor.execute('''select tag_name from tags;''')
                                 existing_tags = (row[0] for row in cursor.fetchall())
                                 for tag in tags:
@@ -303,7 +311,48 @@ def remove_topic(request, section_name, topic_name):
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
-
+# todo здесь, возможно, баг при просмотре неавторизованным пользователем
 def topic(request, section_name, topic_name):
-    # todo implement
-    return HttpResponse('Not implemented yet.')
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('''select count(*) from sections
+                              where name = %s;''', section_name)
+            number_of_sections = cursor.fetchone()[0]
+            if not number_of_sections:
+                raise ValueError('No such section')
+
+            username = request.user.username
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+            cursor.execute('''select role_name from sections
+                              join roles on roles.role_id = sections.role_id
+                              where sections.name = %s;''', section_name)
+            section_role = cursor.fetchone()[0]
+            if section_role not in check_roles(user_role):
+                raise Exception('Current user has no access to current section.')
+
+            cursor.execute('''select * from topics
+                              join sections on sections.section_id = topics.section_id
+                              where sections.name = %s
+                              and topics.name = %s;''', (section_name, topic_name))
+            number_of_topics = len(cursor.fetchall())
+            if not number_of_topics:
+                raise ValueError('No such topic in current section.')
+
+            cursor.execute('''select username, text, m.date, rating from messages as m
+                              join users as u on u.user_id = m.user_id
+                              join topics as t on t.topic_id = m.topic_id
+                              join sections as s on s.section_id = t.section_id
+                              where s.name = %s
+                              and t.name = %s;''', (section_name, topic_name))
+            messages = fetch_to_dict(cursor)
+
+            context = {'section_name': section_name, 'topic_name': topic_name, 'messages': messages}
+
+            return render(request, 'topic.html', context)
+
+    except:
+        return HttpResponseRedirect(reverse('index'))
