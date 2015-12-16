@@ -1,11 +1,15 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
 </head>
 <body>
 
+<div class="container">
 {% if error %}
     <p>
         Your username or password didn't match. Please try again.
@@ -40,6 +44,7 @@
         </tr>
     </table>
 </form>
+</div>
 
 </body>
 </html>

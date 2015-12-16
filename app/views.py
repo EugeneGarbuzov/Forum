@@ -456,7 +456,12 @@ def like_message(request, section_name, topic_name, message_id):
                               and username = %s;''', (message_id, username))
             already_liked = cursor.fetchone()[0] > 0
 
-            if not already_liked:
+            cursor.execute('''select username from messages
+                              join users on users.user_id = messages.user_id
+                              where message_id = %s;''', message_id)
+            is_message_author = cursor.fetchone()[0] == username
+
+            if not already_liked and not is_message_author:
                 cursor.execute('''update messages set rating = messages.rating + %s
                                   where message_id = %s;''', (bonus_rating, message_id))
                 cursor.execute('''insert into likes (message_id, user_id)

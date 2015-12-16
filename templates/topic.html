@@ -1,11 +1,15 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Section {{ section_name }}, topic {{ topic_name }}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
 </head>
 <body>
 
+<div class="container">
 <table>
     <tr>
         <td>
@@ -16,7 +20,7 @@
     </tr>
 </table>
 
-<table>
+<table class="no-align">
     <tr>
         <td>
             Section:
@@ -51,14 +55,14 @@
             </a>
             <br/>
 
-            <a href="{% url 'like_message' section_name topic_name message.message_id %}">
+            <a href="{% url 'like_message' section_name topic_name message.message_id %}" class="margin-top">
                 Like: {{ message.rating }}
             </a>
 
             <br/>
 
             {% if user.is_moderator or user.username == message.username %}
-                <a href="{% url 'remove_message' section_name topic_name message.message_id %}">
+                <a href="{% url 'remove_message' section_name topic_name message.message_id %}" class="margin-top">
                     Remove
                 </a>
 
@@ -94,6 +98,7 @@
         </table>
     </form>
 {% endif %}
+</div>
 
 
 </body>

@@ -1,12 +1,16 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Forum sections</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
 </head>
 <body>
 
-<table>
+<div class="container">
+<table class="no-align">
     {% if user.username %}
         <tr>
             <td>
@@ -81,6 +85,7 @@
         </tr>
     </table>
 {% endif %}
+</div>
 
 </body>
 </html>

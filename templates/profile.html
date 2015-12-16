@@ -1,11 +1,15 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Profile</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
 </head>
 <body>
 
+<div class="container">
 <table>
     <tr>
         <td>
@@ -103,7 +107,7 @@
     {% endif %}
 
     {% if user.get_username == user_info.username %}
-        <tr>
+        <tr class="a-edit">
             <td>
                 <a href="{% url 'edit_profile' %}">
                     Edit
@@ -113,6 +117,7 @@
     {% endif %}
 
 </table>
+</div>
 
 </body>
 </html>
