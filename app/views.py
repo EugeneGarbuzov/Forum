@@ -450,8 +450,18 @@ def like_message(request, section_name, topic_name, message_id):
                               and username = %s;''', username)
             bonus_rating = cursor.fetchone()[0]
 
-            cursor.execute('''update messages set rating = messages.rating + %s
-                            where message_id = %s;''', (bonus_rating, message_id))
+            cursor.execute('''select count(*) from likes
+                              join users on users.user_id = likes.user_id
+                              where message_id = %s
+                              and username = %s;''', (message_id, username))
+            already_liked = cursor.fetchone()[0] > 0
+
+            if not already_liked:
+                cursor.execute('''update messages set rating = messages.rating + %s
+                                  where message_id = %s;''', (bonus_rating, message_id))
+                cursor.execute('''insert into likes (message_id, user_id)
+                                  select %s, user_id from users
+                                  where username = %s;''', (message_id, username))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 

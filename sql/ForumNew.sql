@@ -176,6 +176,17 @@ CREATE TABLE tags_topics
     ON DELETE CASCADE
 );
 
+CREATE TABLE likes (
+  message_id BIGINT UNSIGNED NOT NULL,
+  user_id    BIGINT UNSIGNED NOT NULL,
+
+  PRIMARY KEY (message_id, user_id),
+  FOREIGN KEY (message_id) REFERENCES messages (message_id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users (user_id)
+    ON DELETE CASCADE
+);
+
 -- create table roles_sections
 -- (
 -- 	role_id              bigint unsigned not null,
