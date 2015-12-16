@@ -44,14 +44,25 @@
             </a>
             <br/>
 
-            Tags:
-            {% for tag in topic.tags %}
-                {{ tag }}
-            {% endfor %}
+
+            <table>
+                <tr>
+                    <td>
+                        Tags:
+                    </td>
+                    {% for tag in topic.tags %}
+                        <td>
+                            <a href="{% url 'topics_by_tag' tag %}">
+                                {{ tag }}
+                            </a>
+                        </td>
+                    {% endfor %}
+                </tr>
+            </table>
 
             {% if is_moderator %}
-                <br/>
-                <a href="{% url 'remove_topic' section_name topic.name %}">
+
+                <a href="{% url 'remove_topic' topic.section_name topic.name %}">
                     Remove kebab
                 </a>
             {% endif %}

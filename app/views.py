@@ -4,7 +4,7 @@ from django.db import connection
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict, check_roles
+from Forum.tools import fetch_to_dict, check_roles, log
 
 
 # Create your views here.
@@ -45,6 +45,7 @@ def register(request):
                                 request.POST['status'], request.POST['signature']))
                 user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
                 auth.login(request, user)
+                log(request.POST['username'], 'registered')
                 return HttpResponseRedirect(reverse('index'))
         except:
             return render(request, 'register.html', {'error': 1})
@@ -109,6 +110,7 @@ def edit_profile(request):
                                 request.POST['nickname'], request.POST['full_name'],
                                 request.POST['status'], request.POST['signature'],
                                 username))
+                log(request.user.username, 'edited profile')
                 return HttpResponseRedirect(reverse('index'))
     except:
         return render(request, 'edit_profile.html', {'error': 1})
@@ -171,6 +173,7 @@ def add_section(request):
                                           select role_id, %s, now(), %s
                                           from roles where role_name = %s;''',
                                        (request.POST['name'], request.POST['description'], request.POST['role_name']))
+                        log(request.user.username, 'added section {}'.format(request.POST['name']))
         except:
             return render(request, 'add_section.html', {'error': 1})
 
@@ -190,6 +193,7 @@ def remove_section(request, section_name):
 
             if role == 'admin':
                 cursor.execute('''delete from sections where name = %s''', section_name)
+                log(request.user.username, 'removed section {}'.format(section_name))
 
     return HttpResponseRedirect(reverse('index'))
 
@@ -278,6 +282,7 @@ def add_topic(request, section_name):
                                       where name = %s
                                       and username = %s;''',
                                    (request.POST['name'], request.POST['description'], section_name, username))
+                    log(request.user.username, 'added topic {}'.format(request.POST['name']))
 
                     if request.POST['tags']:
                         tags = set(request.POST['tags'].split())
@@ -319,8 +324,40 @@ def remove_topic(request, section_name, topic_name):
 
                 if user_role == 'admin' or username in moderators:
                     cursor.execute('''delete from topics where name = %s''', topic_name)
+                    log(request.user.username, 'removed topic {}'.format(topic_name))
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
+
+
+def topics_by_tag(request, tag_name):
+    username = request.user.username
+
+    with connection.cursor() as cursor:
+        if username:
+            cursor.execute('''select role_name
+                              from users, roles
+                              where roles.role_id = users.role_id
+                              and username = %s;''', username)
+            user_role = cursor.fetchone()[0]
+        else:
+            user_role = 'newbie'
+
+        allowed_roles = check_roles(user_role)
+
+        cursor.execute('''select tp.name, tp.description, tp.date, u.nickname, u.username, s.name as section_name
+                          from tags as tg, tags_topics as tt, topics as tp, sections as s, roles as r, users as u
+                          where u.user_id = tp.user_id
+                          and s.role_id = r.role_id
+                          and r.role_name in %s
+                          and s.section_id = tp.section_id
+                          and tp.topic_id = tt.topic_id
+                          and tt.tag_id = tg.tag_id
+                          and tg.tag_name = %s;''', [tuple(allowed_roles), tag_name])
+        topics = fetch_to_dict(cursor)
+
+    context = {'tag_name': tag_name, 'topics': topics}
+
+    return render(request, 'topics_by_tag.html', context)
 
 
 def topic(request, section_name, topic_name):
@@ -397,6 +434,7 @@ def add_message(request, section_name, topic_name):
                                   where users.username = %s
                                   and topics.name = %s;''',
                                (request.POST['text'], username, topic_name))
+                log(request.user.username, 'added message')
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -445,6 +483,7 @@ def remove_message(request, section_name, topic_name, message_id):
             if username == message_creator or user_role == 'admin' or (
                             user_role == 'moderator' and username in moderators):
                 cursor.execute('''delete from messages where message_id = %s''', message_id)
+                log(request.user.username, 'removed message id:{}'.format(message_id))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -489,5 +528,6 @@ def edit_message(request, section_name, topic_name, message_id):
                     cursor.execute('''update messages set text = %s
                                       where message_id = %s;''',
                                    (request.POST['text'], message_id))
+                    log(request.user.username, 'edited message id:{}'.format(message_id))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))

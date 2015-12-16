@@ -24,6 +24,14 @@ def check_roles(role, mode='read'):
             return 'newbie',
 
 
+def log(username, message):
+    with connection.cursor() as cursor:
+        cursor.execute('''insert into journal(user_id, description, date)
+                          select user_id, %s, now() from users
+                          where username = %s;''',
+                       (message, username))
+
+
 class ForumAuthenticationBackend:
     def authenticate(self, username=None, password=None):
 

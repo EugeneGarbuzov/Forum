@@ -7,7 +7,7 @@
 <body>
 
 <table>
-    {% if user.nickname %}
+    {% if user.username %}
         <tr>
             <td>
                 <a href="{% url 'profile' user.username %}">
@@ -16,7 +16,7 @@
             </td>
             <td>
                 <a href="{% url 'logout' %}">
-                    gtfo
+                    sign out
                 </a>
             </td>
         </tr>
