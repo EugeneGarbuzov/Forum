@@ -45,6 +45,8 @@ def register(request):
                                 request.POST['status'], request.POST['signature']))
                 user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
                 auth.login(request, user)
+
+                # журналирование событий в базе данных
                 log(request.POST['username'], 'registered')
                 return HttpResponseRedirect(reverse('index'))
         except:
