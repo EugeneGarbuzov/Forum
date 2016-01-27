@@ -1,16 +1,13 @@
-{% load staticfiles %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Forum sections</title>
-  <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
-<div class="container">
-  <table class="no-align">
+<div>
+  <table>
     {% if user.username %}
       <tr>
         <td>
