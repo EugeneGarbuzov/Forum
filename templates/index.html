@@ -5,86 +5,86 @@
 <head>
     <meta charset="UTF-8">
     <title>Forum sections</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-<table class="no-align">
-    {% if user.username %}
-        <tr>
-            <td>
-                <a href="{% url 'profile' user.username %}">
-                    {{ user.nickname }}
-                </a>
-            </td>
-            <td>
-                <a href="{% url 'logout' %}">
-                    sign out
-                </a>
-            </td>
-        </tr>
-    {% else %}
-        <tr>
-            <td>
-                <a href="{% url 'login' %}">
-                    Login
-                </a>
-            </td>
-            <td>
-                <a href="{% url 'register' %}">
-                    Register
-                </a>
-            </td>
-        </tr>
-    {% endif %}
-</table>
-
-<ul>
-    {% for section in sections %}
-        <li>
-            <h3>
-                <a href="{% url 'section' section.name %}">
-                    {{ section.name }}
-                </a>
-            </h3>
-        </li>
-        Created: {{ section.date }}
-        <br/>
-
-        Moderators:
-        {% for moderator in section.moderators %}
-            <a href="{% url 'profile' moderator.username %}">
-                {{ moderator.nickname }}
-            </a>
-        {% endfor %}
-        <br/>
-
-        Category: {{ section.role_name }}
-        <br/>
-
-        Description: {{ section.description }}
-        <br/>
-        {% if user.is_admin %}
-
-            <a href="{% url 'remove_section' section.name %}">
-                Remove section
-            </a>
+    <table class="no-align">
+        {% if user.username %}
+            <tr>
+                <td>
+                    <a href="{% url 'profile' user.username %}">
+                        {{ user.nickname }}
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'logout' %}">
+                        sign out
+                    </a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td>
+                    <a href="{% url 'login' %}">
+                        Login
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'register' %}">
+                        Register
+                    </a>
+                </td>
+            </tr>
         {% endif %}
-    {% endfor %}
-</ul>
-
-{% if user.is_admin %}
-    <table>
-        <tr>
-            <td>
-                <a href="{% url 'add_section' %}">
-                    Add Section
-                </a>
-            </td>
-        </tr>
     </table>
-{% endif %}
+
+    <ul>
+        {% for section in sections %}
+            <li>
+                <h3>
+                    <a href="{% url 'section' section.name %}">
+                        {{ section.name }}
+                    </a>
+                </h3>
+            </li>
+            Created: {{ section.date }}
+            <br/>
+
+            Moderators:
+            {% for moderator in section.moderators %}
+                <a href="{% url 'profile' moderator.username %}">
+                    {{ moderator.nickname }}
+                </a>
+            {% endfor %}
+            <br/>
+
+            Category: {{ section.role_name }}
+            <br/>
+
+            Description: {{ section.description }}
+            <br/>
+            {% if user.is_admin %}
+
+                <a href="{% url 'remove_section' section.name %}">
+                    Remove section
+                </a>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    {% if user.is_admin %}
+        <table>
+            <tr>
+                <td>
+                    <a href="{% url 'add_section' %}">
+                        Add Section
+                    </a>
+                </td>
+            </tr>
+        </table>
+    {% endif %}
 </div>
 
 </body>

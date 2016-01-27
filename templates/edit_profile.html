@@ -5,78 +5,78 @@
 <head>
     <meta charset="UTF-8">
     <title>Edit profile</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-{% if error %}
-    <p>
-        Error.
-    </p>
-{% endif %}
+    {% if error %}
+        <p>
+            Error.
+        </p>
+    {% endif %}
 
-<form method="post" action="{% url 'edit_profile' %}">
-    {% csrf_token %}
-    <table>
-        <tr>
-            <td>
-                <label for="password">Password:</label>
-            </td>
-            <td>
-                <input id="password" type="password" name="password" value="{{ password }}"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="email">Email:</label>
-            </td>
-            <td>
-                <input id="email" type="email" name="email" value="{{ email }}"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="nickname">Nickname:</label>
-            </td>
-            <td>
-                <input id="nickname" type="text" name="nickname" value="{{ nickname }}"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="full_name">Full name:</label>
-            </td>
-            <td>
-                <input id="full_name" type="text" name="full_name" value="{{ full_name }}"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="status">Status:</label>
-            </td>
-            <td>
-                <input id="status" type="text" name="status" value="{{ status }}"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="signature">Signature:</label>
-            </td>
-            <td>
-                <input id="signature" type="text" name="signature" value="{{ signature }}"/>
-            </td>
-        </tr>
+    <form method="post" action="{% url 'edit_profile' %}">
+        {% csrf_token %}
+        <table>
+            <tr>
+                <td>
+                    <label for="password">Password:</label>
+                </td>
+                <td>
+                    <input id="password" type="password" name="password" value="{{ password }}"/>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="email">Email:</label>
+                </td>
+                <td>
+                    <input id="email" type="email" name="email" value="{{ email }}"/>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="nickname">Nickname:</label>
+                </td>
+                <td>
+                    <input id="nickname" type="text" name="nickname" value="{{ nickname }}"/>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="full_name">Full name:</label>
+                </td>
+                <td>
+                    <input id="full_name" type="text" name="full_name" value="{{ full_name }}"/>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="status">Status:</label>
+                </td>
+                <td>
+                    <input id="status" type="text" name="status" value="{{ status }}"/>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="signature">Signature:</label>
+                </td>
+                <td>
+                    <input id="signature" type="text" name="signature" value="{{ signature }}"/>
+                </td>
+            </tr>
 
-        <tr>
-            <td>
-            </td>
-            <td>
-                <input type="submit" value="Update profile"/>
-            </td>
-        </tr>
-    </table>
-</form>
+            <tr>
+                <td>
+                </td>
+                <td>
+                    <input type="submit" value="Update profile"/>
+                </td>
+            </tr>
+        </table>
+    </form>
 </div>
 
 </body>

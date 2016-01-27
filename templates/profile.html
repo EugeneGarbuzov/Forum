@@ -5,118 +5,118 @@
 <head>
     <meta charset="UTF-8">
     <title>Profile</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-<table>
-    <tr>
-        <td>
-            Nickname:
-        </td>
-        <td>
-            {{ user_info.nickname }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Full name:
-        </td>
-        <td>
-            {{ user_info.full_name }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Status:
-        </td>
-        <td>
-            {{ user_info.status }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Signature:
-        </td>
-        <td>
-            {{ user_info.signature }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Role:
-        </td>
-        <td>
-            {{ user_info.role_name }}
-        </td>
-    </tr>
-
-    <tr>
-        <td>
-            Rank:
-        </td>
-        <td>
-            {{ user_info.rank_name }} ({{ user_info.bonus_rating }})
-        </td>
-    </tr>
-
-    {% if moderated_sections %}
+    <table>
         <tr>
             <td>
-                Moderated sections:
+                Nickname:
             </td>
             <td>
-                <table>
-                    {% for section in moderated_sections %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'section' section %}">
-                                    {{ section }}
-                                </a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
+                {{ user_info.nickname }}
             </td>
         </tr>
-    {% endif %}
-
-    {% if trophies %}
         <tr>
             <td>
-                Trophies:
+                Full name:
             </td>
             <td>
-
-                <table>
-                    {% for trophy in trophies %}
-                        <tr>
-                            <td>
-                                {{ trophy.trophy_name }}:
-                            </td>
-                            <td>
-                                {{ trophy.description }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
-
+                {{ user_info.full_name }}
             </td>
         </tr>
-    {% endif %}
-
-    {% if user.get_username == user_info.username %}
-        <tr class="a-edit">
+        <tr>
             <td>
-                <a href="{% url 'edit_profile' %}">
-                    Edit
-                </a>
+                Status:
+            </td>
+            <td>
+                {{ user_info.status }}
             </td>
         </tr>
-    {% endif %}
+        <tr>
+            <td>
+                Signature:
+            </td>
+            <td>
+                {{ user_info.signature }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Role:
+            </td>
+            <td>
+                {{ user_info.role_name }}
+            </td>
+        </tr>
 
-</table>
+        <tr>
+            <td>
+                Rank:
+            </td>
+            <td>
+                {{ user_info.rank_name }} ({{ user_info.bonus_rating }})
+            </td>
+        </tr>
+
+        {% if moderated_sections %}
+            <tr>
+                <td>
+                    Moderated sections:
+                </td>
+                <td>
+                    <table>
+                        {% for section in moderated_sections %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'section' section %}">
+                                        {{ section }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </td>
+            </tr>
+        {% endif %}
+
+        {% if trophies %}
+            <tr>
+                <td>
+                    Trophies:
+                </td>
+                <td>
+
+                    <table>
+                        {% for trophy in trophies %}
+                            <tr>
+                                <td>
+                                    {{ trophy.trophy_name }}:
+                                </td>
+                                <td>
+                                    {{ trophy.description }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+
+                </td>
+            </tr>
+        {% endif %}
+
+        {% if user.get_username == user_info.username %}
+            <tr class="a-edit">
+                <td>
+                    <a href="{% url 'edit_profile' %}">
+                        Edit
+                    </a>
+                </td>
+            </tr>
+        {% endif %}
+
+    </table>
 </div>
 
 </body>

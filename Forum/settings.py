@@ -74,14 +74,14 @@ WSGI_APPLICATION = 'Forum.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'forum',
-        'USER': 'Admin',
-        'PASSWORD': '1234',
-        'HOST': '',
-        'PORT': '',
-    }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'forum',
+    #     'USER': 'Admin',
+    #     'PASSWORD': '1234',
+    #     'HOST': '',
+    #     'PORT': '',
+    # }
 }
 
 # Internationalization

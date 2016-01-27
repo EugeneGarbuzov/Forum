@@ -5,57 +5,57 @@
 <head>
     <meta charset="UTF-8">
     <title>Tag</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-<table class="no-align">
-    <tr>
-        <td>
-            Tag:
-        </td>
-        <td>
-            {{ tag_name }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            References:
-        </td>
-        <td>
-            {{ topics|length }}
-        </td>
-    </tr>
-</table>
+    <table class="no-align">
+        <tr>
+            <td>
+                Tag:
+            </td>
+            <td>
+                {{ tag_name }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                References:
+            </td>
+            <td>
+                {{ topics|length }}
+            </td>
+        </tr>
+    </table>
 
-<ul>
-    {% for topic in topics %}
-        <li>
-            <h3>
-                <a href="{% url 'topic' topic.section_name topic.name %}">
-                    {{ topic.name }}
-                </a>
-            </h3>
-            Created: {{ topic.date }}
-            <br/>
-
-            Author:
-            <a href="{% url 'profile' topic.username %}">
-                {{ topic.nickname }}
-            </a>
-            <br/>
-
-            {% if is_moderator %}
+    <ul>
+        {% for topic in topics %}
+            <li>
+                <h3>
+                    <a href="{% url 'topic' topic.section_name topic.name %}">
+                        {{ topic.name }}
+                    </a>
+                </h3>
+                Created: {{ topic.date }}
                 <br/>
-                <a href="{% url 'remove_topic' section_name topic.name %}">
-                    Remove
-                </a>
-            {% endif %}
 
-        </li>
-    {% endfor %}
-</ul>
+                Author:
+                <a href="{% url 'profile' topic.username %}">
+                    {{ topic.nickname }}
+                </a>
+                <br/>
+
+                {% if is_moderator %}
+                    <br/>
+                    <a href="{% url 'remove_topic' section_name topic.name %}">
+                        Remove
+                    </a>
+                {% endif %}
+
+            </li>
+        {% endfor %}
+    </ul>
 </div>
 
 </body>
