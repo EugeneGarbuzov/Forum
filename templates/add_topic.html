@@ -3,55 +3,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Add topic</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
+  <meta charset="UTF-8">
+  <title>Add topic</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-    {% if error %}
-        <p>
-            Error.
-        </p>
-    {% endif %}
+  {% if error %}
+    <p>
+      Error.
+    </p>
+  {% endif %}
 
-    <form method="post" action="{% url 'add_topic' section_name %}">
-        {% csrf_token %}
-        <table>
-            <tr>
-                <td>
-                    <label for="name">Topic name: </label>
-                </td>
-                <td>
-                    <input id="name" type="text" name="name"/>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <label for="description">Description: </label>
-                </td>
-                <td>
-                    <textarea id="description" name="description"></textarea>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <label for="tags">Tags: </label>
-                </td>
-                <td>
-                    <input id="tags" type="text" name="tags"/>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                </td>
-                <td>
-                    <input type="submit" value="Add topic"/>
-                </td>
-            </tr>
-        </table>
-    </form>
+  <form method="post" action="{% url 'add_topic' section_name %}">
+    {% csrf_token %}
+    <table>
+      <tr>
+        <td>
+          <label for="name">Topic name: </label>
+        </td>
+        <td>
+          <input id="name" type="text" name="name"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="description">Description: </label>
+        </td>
+        <td>
+          <textarea id="description" name="description"></textarea>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="tags">Tags: </label>
+        </td>
+        <td>
+          <input id="tags" type="text" name="tags"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+        </td>
+        <td>
+          <input type="submit" value="Add topic"/>
+        </td>
+      </tr>
+    </table>
+  </form>
 </div>
 
 </body>

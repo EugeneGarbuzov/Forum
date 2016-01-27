@@ -3,89 +3,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Section {{ section_name }}</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
+  <meta charset="UTF-8">
+  <title>Section {{ section_name }}</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-    <table>
-        <tr>
+  <table>
+    <tr>
+      <td>
+        <a href="{% url 'index' %}">
+          Back to sections list
+        </a>
+      </td>
+    </tr>
+  </table>
+
+  <table class="no-align">
+    <tr>
+      <td>
+        Section:
+      </td>
+      <td>
+        {{ section_name }}
+      </td>
+    </tr>
+  </table>
+
+  <ul>
+    {% for topic in topics %}
+      <li>
+        <h3>
+          <a href="{% url 'topic' topic.section_name topic.name %}">
+            {{ topic.name }}
+          </a>
+        </h3>
+        Created: {{ topic.date }}
+        <br/>
+
+        Author:
+        <a href="{% url 'profile' topic.username %}">
+          {{ topic.nickname }}
+        </a>
+        <br/>
+
+
+        <table class="no-align">
+          <tr>
             <td>
-                <a href="{% url 'index' %}">
-                    Back to sections list
+              Tags:
+            </td>
+            {% for tag in topic.tags %}
+              <td>
+                <a href="{% url 'topics_by_tag' tag %}">
+                  {{ tag }}
                 </a>
-            </td>
-        </tr>
-    </table>
-
-    <table class="no-align">
-        <tr>
-            <td>
-                Section:
-            </td>
-            <td>
-                {{ section_name }}
-            </td>
-        </tr>
-    </table>
-
-    <ul>
-        {% for topic in topics %}
-            <li>
-                <h3>
-                    <a href="{% url 'topic' topic.section_name topic.name %}">
-                        {{ topic.name }}
-                    </a>
-                </h3>
-                Created: {{ topic.date }}
-                <br/>
-
-                Author:
-                <a href="{% url 'profile' topic.username %}">
-                    {{ topic.nickname }}
-                </a>
-                <br/>
-
-
-                <table class="no-align">
-                    <tr>
-                        <td>
-                            Tags:
-                        </td>
-                        {% for tag in topic.tags %}
-                            <td>
-                                <a href="{% url 'topics_by_tag' tag %}">
-                                    {{ tag }}
-                                </a>
-                            </td>
-                        {% endfor %}
-                    </tr>
-                </table>
-
-                {% if is_moderator %}
-
-                    <a href="{% url 'remove_topic' topic.section_name topic.name %}">
-                        Remove kebab
-                    </a>
-                {% endif %}
-
-            </li>
-        {% endfor %}
-    </ul>
-
-    {% if can_create_topic %}
-        <table>
-            <tr>
-                <td>
-                    <a href="{% url 'add_topic' section_name %}">
-                        Add Topic
-                    </a>
-                </td>
-            </tr>
+              </td>
+            {% endfor %}
+          </tr>
         </table>
-    {% endif %}
+
+        {% if is_moderator %}
+
+          <a href="{% url 'remove_topic' topic.section_name topic.name %}">
+            Remove kebab
+          </a>
+        {% endif %}
+
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if can_create_topic %}
+    <table>
+      <tr>
+        <td>
+          <a href="{% url 'add_topic' section_name %}">
+            Add Topic
+          </a>
+        </td>
+      </tr>
+    </table>
+  {% endif %}
 </div>
 
 </body>

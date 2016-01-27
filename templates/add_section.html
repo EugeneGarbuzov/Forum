@@ -3,60 +3,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Add section</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
+  <meta charset="UTF-8">
+  <title>Add section</title>
+  <link rel="stylesheet" type="text/css" href="{% static 'forum/style.css' %}"/>
 </head>
 <body>
 
 <div class="container">
-    {% if error %}
-        <p>
-            Error.
-        </p>
-    {% endif %}
+  {% if error %}
+    <p>
+      Error.
+    </p>
+  {% endif %}
 
-    <form method="post" action="{% url 'add_section' %}">
-        {% csrf_token %}
-        <table>
-            <tr>
-                <td>
-                    <label for="name">Section name: </label>
-                </td>
-                <td>
-                    <input id="name" type="text" name="name"/>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <label for="role_name">Role: </label>
-                </td>
-                <td>
-                    <select id="role_name" name="role_name">
-                        <option>admin</option>
-                        <option>moderator</option>
-                        <option selected="selected">regular</option>
-                        <option>newbie</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <label for="description">Description: </label>
-                </td>
-                <td>
-                    <textarea id="description" name="description"></textarea>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                </td>
-                <td>
-                    <input type="submit" value="Add section"/>
-                </td>
-            </tr>
-        </table>
-    </form>
+  <form method="post" action="{% url 'add_section' %}">
+    {% csrf_token %}
+    <table>
+      <tr>
+        <td>
+          <label for="name">Section name: </label>
+        </td>
+        <td>
+          <input id="name" type="text" name="name"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="role_name">Role: </label>
+        </td>
+        <td>
+          <select id="role_name" name="role_name">
+            <option>admin</option>
+            <option>moderator</option>
+            <option selected="selected">regular</option>
+            <option>newbie</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="description">Description: </label>
+        </td>
+        <td>
+          <textarea id="description" name="description"></textarea>
+        </td>
+      </tr>
+      <tr>
+        <td>
+        </td>
+        <td>
+          <input type="submit" value="Add section"/>
+        </td>
+      </tr>
+    </table>
+  </form>
 </div>
 
 </body>
