@@ -37,9 +37,9 @@ def register(request):
     if request.method == 'POST':
         try:
             with connection.cursor() as cursor:
-                cursor.execute('''insert into users(role_id, rank_id, username, password, email, nickname, full_name, date, status,signature)
-                                  select role_id, rank_id, %s, %s, %s, %s, %s, now(), %s, %s from roles, ranks
-                                  where role_name = 'newbie' and rank_name = 'rank_1';''',
+                cursor.execute('''INSERT INTO users(role_id, rank_id, username, password, email, nickname, full_name, date, status,signature)
+                                  SELECT role_id, rank_id, %s, %s, %s, %s, %s, now(), %s, %s FROM ROLES, ranks
+                                  WHERE role_name = 'newbie' AND rank_name = 'rank_1';''',
                                (request.POST['username'], request.POST['password'], request.POST['email'],
                                 request.POST['nickname'], request.POST['full_name'],
                                 request.POST['status'], request.POST['signature']))
@@ -58,26 +58,26 @@ def register(request):
 def profile(request, username):
     try:
         with connection.cursor() as cursor:
-            cursor.execute('''select username, nickname, full_name, date, status,
+            cursor.execute('''SELECT username, nickname, full_name, DATE, status,
                               signature, role_name, rank_name, bonus_rating
-                              from users, roles, ranks
-                              where users.role_id = roles.role_id
-                              and ranks.rank_id = users.rank_id
-                              and username = %s;''', username)
+                              FROM USERS, ROLES, ranks
+                              WHERE USERS.role_id = ROLES.role_id
+                              AND ranks.rank_id = USERS.rank_id
+                              AND username = %s;''', username)
             user = fetch_to_dict(cursor)[0]
 
-            cursor.execute('''select trophy_name, description
-                              from trophies, trophies_users, users
-                              where trophies.trophy_id = trophies_users.trophy_id
-                              and trophies_users.user_id = users.user_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT trophy_name, description
+                              FROM trophies, trophies_users, users
+                              WHERE trophies.trophy_id = trophies_users.trophy_id
+                              AND trophies_users.user_id = users.user_id
+                              AND username = %s;''', username)
             trophies = fetch_to_dict(cursor)
 
-            cursor.execute('''select sections.name
-                              from users, sections_users, sections
-                              where sections.section_id = sections_users.section_id
-                              and sections_users.user_id = users.user_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT sections.name
+                              FROM users, sections_users, sections
+                              WHERE sections.section_id = sections_users.section_id
+                              AND sections_users.user_id = users.user_id
+                              AND username = %s;''', username)
             moderated_sections = cursor.fetchall()
 
             if moderated_sections:
@@ -98,16 +98,16 @@ def edit_profile(request):
         with connection.cursor() as cursor:
 
             if request.method == 'GET':
-                cursor.execute('''select email, nickname, full_name, status, signature
-                                  from users
-                                  where username = %s;''', username)
+                cursor.execute('''SELECT email, nickname, full_name, status, signature
+                                  FROM users
+                                  WHERE username = %s;''', username)
                 user = fetch_to_dict(cursor)[0]
                 return render(request, 'edit_profile.html', user)
 
             elif request.method == 'POST':
-                cursor.execute('''update users set password = %s, email = %s, nickname = %s,
+                cursor.execute('''UPDATE users SET password = %s, email = %s, nickname = %s,
                                   full_name = %s, status = %s, signature = %s
-                                  where username = %s;''',
+                                  WHERE username = %s;''',
                                (request.POST['password'], request.POST['email'],
                                 request.POST['nickname'], request.POST['full_name'],
                                 request.POST['status'], request.POST['signature'],
@@ -123,10 +123,10 @@ def index(request):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''select nickname, role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT nickname, role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             nickname, role = cursor.fetchone()
         else:
             nickname = ''
@@ -134,19 +134,19 @@ def index(request):
 
         roles = check_roles(role)
 
-        cursor.execute('''select s.name, s.description, s.date,
-                          (select role_name from roles where roles.role_id = s.role_id)  as role_name
-                          from sections as s, roles as r
-                          where s.role_id = r.role_id
-                          and r.role_name in %s;''', [tuple(roles)])
+        cursor.execute('''SELECT s.name, s.description, s.date,
+                          (SELECT role_name FROM roles WHERE roles.role_id = s.role_id)  AS role_name
+                          FROM sections AS s, ROLES AS r
+                          WHERE s.role_id = r.role_id
+                          AND r.role_name IN %s;''', [tuple(roles)])
         sections = fetch_to_dict(cursor)
 
         for section in sections:
-            cursor.execute('''select username, nickname
-                              from users, sections, sections_users
-                              where users.user_id = sections_users.user_id
-                              and sections_users.section_id = sections.section_id
-                              and name = %s;''', section['name'])
+            cursor.execute('''SELECT username, nickname
+                              FROM users, sections, sections_users
+                              WHERE users.user_id = sections_users.user_id
+                              AND sections_users.section_id = sections.section_id
+                              AND name = %s;''', section['name'])
             section['moderators'] = fetch_to_dict(cursor)
 
     context = {'user': {'nickname': nickname, 'username': username, 'is_admin': role == 'admin'},
@@ -161,19 +161,19 @@ def add_section(request):
     if username:
         try:
             with connection.cursor() as cursor:
-                cursor.execute('''select role_name
-                                  from users, roles
-                                  where roles.role_id = users.role_id
-                                  and username = %s;''', username)
+                cursor.execute('''SELECT role_name
+                                  FROM users, roles
+                                  WHERE roles.role_id = users.role_id
+                                  AND username = %s;''', username)
                 role = cursor.fetchone()[0]
 
                 if role == 'admin':
                     if request.method == 'GET':
                         return render(request, 'add_section.html')
                     elif request.method == 'POST':
-                        cursor.execute('''insert into sections(role_id, name, date, description)
-                                          select role_id, %s, now(), %s
-                                          from roles where role_name = %s;''',
+                        cursor.execute('''INSERT INTO sections(role_id, name, date, description)
+                                          SELECT role_id, %s, now(), %s
+                                          FROM ROLES WHERE role_name = %s;''',
                                        (request.POST['name'], request.POST['description'], request.POST['role_name']))
                         log(request.user.username, 'added section {}'.format(request.POST['name']))
         except:
@@ -187,14 +187,14 @@ def remove_section(request, section_name):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             role = cursor.fetchone()[0]
 
             if role == 'admin':
-                cursor.execute('''delete from sections where name = %s''', section_name)
+                cursor.execute('''DELETE FROM sections WHERE name = %s''', section_name)
                 log(request.user.username, 'removed section {}'.format(section_name))
 
     return HttpResponseRedirect(reverse('index'))
@@ -205,44 +205,44 @@ def section(request, section_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
         else:
             user_role = 'newbie'
 
-        cursor.execute('''select role_name
-                          from sections, roles
-                          where roles.role_id = sections.role_id
-                          and name = %s;''', section_name)
+        cursor.execute('''SELECT role_name
+                          FROM sections, roles
+                          WHERE roles.role_id = sections.role_id
+                          AND name = %s;''', section_name)
         section_role = cursor.fetchone()[0]
 
         if section_role not in check_roles(user_role):
             return HttpResponseRedirect(reverse('index'))
 
-        cursor.execute('''select username
-                          from users, sections, sections_users
-                          where users.user_id = sections_users.user_id
-                          and sections_users.section_id = sections.section_id
-                          and name = %s;''', section_name)
+        cursor.execute('''SELECT username
+                          FROM users, sections, sections_users
+                          WHERE users.user_id = sections_users.user_id
+                          AND sections_users.section_id = sections.section_id
+                          AND name = %s;''', section_name)
         moderators = (row[0] for row in cursor.fetchall())
 
         is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
 
-        cursor.execute('''select t.name, t.description, t.date, u.nickname, u.username, s.name as section_name
-                          from topics as t, users as u, sections as s
-                          where u.user_id = t.user_id
-                          and t.section_id = s.section_id
-                          and s.name = %s;''', section_name)
+        cursor.execute('''SELECT t.name, t.description, t.date, u.nickname, u.username, s.name AS section_name
+                          FROM topics AS t, USERS AS u, sections AS s
+                          WHERE u.user_id = t.user_id
+                          AND t.section_id = s.section_id
+                          AND s.name = %s;''', section_name)
         topics = fetch_to_dict(cursor)
 
         for topic in topics:
-            cursor.execute('''select tag_name from tags_topics
-                              join tags on tags.tag_id = tags_topics.tag_id
-                              join topics on topics.topic_id = tags_topics.topic_id
-                              where name = %s;''', topic['name'])
+            cursor.execute('''SELECT tag_name FROM tags_topics
+                              JOIN tags ON tags.tag_id = tags_topics.tag_id
+                              JOIN topics ON topics.topic_id = tags_topics.topic_id
+                              WHERE name = %s;''', topic['name'])
             topic['tags'] = (row[0] for row in cursor.fetchall())
 
     context = {'can_create_topic': section_role in check_roles(user_role, 'write'),
@@ -258,18 +258,18 @@ def add_topic(request, section_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
         else:
             user_role = 'newbie'
 
-        cursor.execute('''select role_name
-                          from sections, roles
-                          where roles.role_id = sections.role_id
-                          and name = %s;''', section_name)
+        cursor.execute('''SELECT role_name
+                          FROM sections, roles
+                          WHERE roles.role_id = sections.role_id
+                          AND name = %s;''', section_name)
         section_role = cursor.fetchone()[0]
 
         if section_role in check_roles(user_role):
@@ -278,11 +278,11 @@ def add_topic(request, section_name):
 
             elif request.method == 'POST':
                 try:
-                    cursor.execute('''insert into topics(section_id, user_id, name, date, description)
-                                      select section_id, user_id, %s, now(), %s
-                                      from sections, users
-                                      where name = %s
-                                      and username = %s;''',
+                    cursor.execute('''INSERT INTO topics(section_id, user_id, name, date, description)
+                                      SELECT section_id, user_id, %s, now(), %s
+                                      FROM sections, USERS
+                                      WHERE NAME = %s
+                                      AND username = %s;''',
                                    (request.POST['name'], request.POST['description'], section_name, username))
                     log(request.user.username, 'added topic {}'.format(request.POST['name']))
 
@@ -292,11 +292,11 @@ def add_topic(request, section_name):
                         existing_tags = (row[0] for row in cursor.fetchall())
                         for tag in tags:
                             if tag not in existing_tags:
-                                cursor.execute('''insert into tags(tag_name) values (%s);''', tag)
-                            cursor.execute('''insert into tags_topics(tag_id, topic_id)
-                                              select tag_id, topic_id from tags, topics
-                                              where tag_name = %s
-                                              and name = %s;''', (tag, request.POST['name']))
+                                cursor.execute('''INSERT INTO tags(tag_name) VALUES (%s);''', tag)
+                            cursor.execute('''INSERT INTO tags_topics(tag_id, topic_id)
+                                              SELECT tag_id, topic_id FROM tags, topics
+                                              WHERE tag_name = %s
+                                              AND name = %s;''', (tag, request.POST['name']))
                 except:
                     return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
 
@@ -309,23 +309,23 @@ def remove_topic(request, section_name, topic_name):
     if username:
         with connection.cursor() as cursor:
 
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
 
             if user_role in ('admin', 'moderator'):
 
-                cursor.execute('''select username
-                                  from users, sections, sections_users
-                                  where users.user_id = sections_users.user_id
-                                  and sections_users.section_id = sections.section_id
-                                  and name = %s;''', section_name)
+                cursor.execute('''SELECT username
+                                  FROM users, sections, sections_users
+                                  WHERE users.user_id = sections_users.user_id
+                                  AND sections_users.section_id = sections.section_id
+                                  AND name = %s;''', section_name)
                 moderators = (row[0] for row in cursor.fetchall())
 
                 if user_role == 'admin' or username in moderators:
-                    cursor.execute('''delete from topics where name = %s''', topic_name)
+                    cursor.execute('''DELETE FROM topics WHERE name = %s''', topic_name)
                     log(request.user.username, 'removed topic {}'.format(topic_name))
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
@@ -336,25 +336,25 @@ def topics_by_tag(request, tag_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
         else:
             user_role = 'newbie'
 
         allowed_roles = check_roles(user_role)
 
-        cursor.execute('''select tp.name, tp.description, tp.date, u.nickname, u.username, s.name as section_name
-                          from tags as tg, tags_topics as tt, topics as tp, sections as s, roles as r, users as u
-                          where u.user_id = tp.user_id
-                          and s.role_id = r.role_id
-                          and r.role_name in %s
-                          and s.section_id = tp.section_id
-                          and tp.topic_id = tt.topic_id
-                          and tt.tag_id = tg.tag_id
-                          and tg.tag_name = %s;''', [tuple(allowed_roles), tag_name])
+        cursor.execute('''SELECT tp.name, tp.description, tp.date, u.nickname, u.username, s.name AS section_name
+                          FROM tags AS tg, tags_topics AS tt, topics AS tp, sections AS s, ROLES AS r, USERS AS u
+                          WHERE u.user_id = tp.user_id
+                          AND s.role_id = r.role_id
+                          AND r.role_name IN %s
+                          AND s.section_id = tp.section_id
+                          AND tp.topic_id = tt.topic_id
+                          AND tt.tag_id = tg.tag_id
+                          AND tg.tag_name = %s;''', [tuple(allowed_roles), tag_name])
         topics = fetch_to_dict(cursor)
 
     context = {'tag_name': tag_name, 'topics': topics}
@@ -367,36 +367,36 @@ def topic(request, section_name, topic_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
         else:
             user_role = 'newbie'
 
-        cursor.execute('''select role_name
-                          from sections, roles
-                          where roles.role_id = sections.role_id
-                          and name = %s;''', section_name)
+        cursor.execute('''SELECT role_name
+                          FROM sections, roles
+                          WHERE roles.role_id = sections.role_id
+                          AND name = %s;''', section_name)
         section_role = cursor.fetchone()[0]
 
         if section_role in check_roles(user_role):
-            cursor.execute('''select count(*) from topics where topics.name = %s;''', topic_name)
+            cursor.execute('''SELECT count(*) FROM topics WHERE topics.name = %s;''', topic_name)
 
             if cursor.fetchone()[0]:
-                cursor.execute('''select message_id, username, nickname, text, messages.date, rating
-                                  from messages, users, topics
-                                  where users.user_id = messages.user_id
-                                  and messages.topic_id = topics.topic_id
-                                  and topics.name = %s;''', topic_name)
+                cursor.execute('''SELECT message_id, username, nickname, text, messages.date, rating
+                                  FROM messages, users, topics
+                                  WHERE users.user_id = messages.user_id
+                                  AND messages.topic_id = topics.topic_id
+                                  AND topics.name = %s;''', topic_name)
                 messages = fetch_to_dict(cursor)
 
-                cursor.execute('''select username
-                                  from users, sections, sections_users
-                                  where users.user_id = sections_users.user_id
-                                  and sections_users.section_id = sections.section_id
-                                  and name = %s;''', section_name)
+                cursor.execute('''SELECT username
+                                  FROM users, sections, sections_users
+                                  WHERE users.user_id = sections_users.user_id
+                                  AND sections_users.section_id = sections.section_id
+                                  AND name = %s;''', section_name)
                 moderators = (row[0] for row in cursor.fetchall())
 
                 is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
@@ -417,24 +417,24 @@ def add_message(request, section_name, topic_name):
 
     if username and request.method == 'POST':
         with connection.cursor() as cursor:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
 
-            cursor.execute('''select role_name
-                              from sections, roles
-                              where roles.role_id = sections.role_id
-                              and name = %s;''', section_name)
+            cursor.execute('''SELECT role_name
+                              FROM sections, roles
+                              WHERE roles.role_id = sections.role_id
+                              AND name = %s;''', section_name)
             section_role = cursor.fetchone()[0]
 
             if section_role in check_roles(user_role, mode='write'):
-                cursor.execute('''insert into messages (date, text, rating, user_id, topic_id)
-                                  select now(), %s, 0, users.user_id, topics.topic_id
-                                  from users, topics
-                                  where users.username = %s
-                                  and topics.name = %s;''',
+                cursor.execute('''INSERT INTO messages (date, text, rating, user_id, topic_id)
+                                  SELECT now(), %s, 0, USERS.user_id, topics.topic_id
+                                  FROM USERS, topics
+                                  WHERE USERS.username = %s
+                                  AND topics.name = %s;''',
                                (request.POST['text'], username, topic_name))
                 log(request.user.username, 'added message')
 
@@ -446,29 +446,29 @@ def like_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''select bonus_rating
-                              from users, ranks
-                              where ranks.rank_id = users.rank_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT bonus_rating
+                              FROM users, ranks
+                              WHERE ranks.rank_id = users.rank_id
+                              AND username = %s;''', username)
             bonus_rating = cursor.fetchone()[0]
 
-            cursor.execute('''select count(*) from likes
-                              join users on users.user_id = likes.user_id
-                              where message_id = %s
-                              and username = %s;''', (message_id, username))
+            cursor.execute('''SELECT count(*) FROM likes
+                              JOIN users ON users.user_id = likes.user_id
+                              WHERE message_id = %s
+                              AND username = %s;''', (message_id, username))
             already_liked = cursor.fetchone()[0] > 0
 
-            cursor.execute('''select username from messages
-                              join users on users.user_id = messages.user_id
-                              where message_id = %s;''', message_id)
+            cursor.execute('''SELECT username FROM messages
+                              JOIN users ON users.user_id = messages.user_id
+                              WHERE message_id = %s;''', message_id)
             is_message_author = cursor.fetchone()[0] == username
 
             if not already_liked and not is_message_author:
-                cursor.execute('''update messages set rating = messages.rating + %s
-                                  where message_id = %s;''', (bonus_rating, message_id))
-                cursor.execute('''insert into likes (message_id, user_id)
-                                  select %s, user_id from users
-                                  where username = %s;''', (message_id, username))
+                cursor.execute('''UPDATE messages SET rating = messages.rating + %s
+                                  WHERE message_id = %s;''', (bonus_rating, message_id))
+                cursor.execute('''INSERT INTO likes (message_id, user_id)
+                                  SELECT %s, user_id FROM USERS
+                                  WHERE username = %s;''', (message_id, username))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -478,28 +478,28 @@ def remove_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
 
-            cursor.execute('''select username
-                              from messages, users
-                              where users.user_id = messages.user_id
-                              and messages.message_id = %s;''', message_id)
+            cursor.execute('''SELECT username
+                              FROM messages, users
+                              WHERE users.user_id = messages.user_id
+                              AND messages.message_id = %s;''', message_id)
             message_creator = cursor.fetchone()[0]
 
-            cursor.execute('''select username
-                              from users, sections, sections_users
-                              where users.user_id = sections_users.user_id
-                              and sections_users.section_id = sections.section_id
-                              and name = %s;''', section_name)
+            cursor.execute('''SELECT username
+                              FROM users, sections, sections_users
+                              WHERE users.user_id = sections_users.user_id
+                              AND sections_users.section_id = sections.section_id
+                              AND name = %s;''', section_name)
             moderators = (row[0] for row in cursor.fetchall())
 
             if username == message_creator or user_role == 'admin' or (
                             user_role == 'moderator' and username in moderators):
-                cursor.execute('''delete from messages where message_id = %s''', message_id)
+                cursor.execute('''DELETE FROM messages WHERE message_id = %s''', message_id)
                 log(request.user.username, 'removed message id:{}'.format(message_id))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
@@ -510,40 +510,40 @@ def edit_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''select role_name
-                              from users, roles
-                              where roles.role_id = users.role_id
-                              and username = %s;''', username)
+            cursor.execute('''SELECT role_name
+                              FROM users, roles
+                              WHERE roles.role_id = users.role_id
+                              AND username = %s;''', username)
             user_role = cursor.fetchone()[0]
 
-            cursor.execute('''select username
-                              from messages, users
-                              where users.user_id = messages.user_id
-                              and messages.message_id = %s;''', message_id)
+            cursor.execute('''SELECT username
+                              FROM messages, users
+                              WHERE users.user_id = messages.user_id
+                              AND messages.message_id = %s;''', message_id)
             message_creator = cursor.fetchone()[0]
 
-            cursor.execute('''select username
-                              from users, sections, sections_users
-                              where users.user_id = sections_users.user_id
-                              and sections_users.section_id = sections.section_id
-                              and name = %s;''', section_name)
+            cursor.execute('''SELECT username
+                              FROM users, sections, sections_users
+                              WHERE users.user_id = sections_users.user_id
+                              AND sections_users.section_id = sections.section_id
+                              AND name = %s;''', section_name)
             moderators = (row[0] for row in cursor.fetchall())
 
             if username == message_creator or user_role == 'admin' or (
                             user_role == 'moderator' and username in moderators):
                 if request.method == 'GET':
-                    cursor.execute('''select message_id, username, nickname, text, messages.date, rating
-                                      from messages, users
-                                      where users.user_id = messages.user_id
-                                      and message_id = %s;''', message_id)
+                    cursor.execute('''SELECT message_id, username, nickname, text, messages.date, rating
+                                      FROM messages, users
+                                      WHERE users.user_id = messages.user_id
+                                      AND message_id = %s;''', message_id)
 
                     message = fetch_to_dict(cursor)[0]
                     context = {'section_name': section_name, 'topic_name': topic_name, 'message_id': message_id,
                                'message': message}
                     return render(request, 'edit_message.html', context)
                 elif request.method == 'POST':
-                    cursor.execute('''update messages set text = %s
-                                      where message_id = %s;''',
+                    cursor.execute('''UPDATE messages SET text = %s
+                                      WHERE message_id = %s;''',
                                    (request.POST['text'], message_id))
                     log(request.user.username, 'edited message id:{}'.format(message_id))
 

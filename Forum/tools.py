@@ -26,9 +26,9 @@ def check_roles(role, mode='read'):
 
 def log(username, message):
     with connection.cursor() as cursor:
-        cursor.execute('''insert into journal(user_id, description, date)
-                          select user_id, %s, now() from users
-                          where username = %s;''',
+        cursor.execute('''INSERT INTO journal(user_id, description, date)
+                          SELECT user_id, %s, now() FROM USERS
+                          WHERE username = %s;''',
                        (message, username))
 
 
@@ -36,8 +36,8 @@ class ForumAuthenticationBackend:
     def authenticate(self, username=None, password=None):
 
         with connection.cursor() as cursor:
-            cursor.execute('''select * from users
-                              where username = %s and password = %s;''',
+            cursor.execute('''SELECT * FROM users
+                              WHERE username = %s AND password = %s;''',
                            (username, password))
 
             if fetch_to_dict(cursor):

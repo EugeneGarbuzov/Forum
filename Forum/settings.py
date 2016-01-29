@@ -54,8 +54,7 @@ ROOT_URLCONF = 'Forum.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'app/../templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, 'app/../templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -74,14 +73,14 @@ WSGI_APPLICATION = 'Forum.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'forum',
-    #     'USER': 'Admin',
-    #     'PASSWORD': '1234',
-    #     'HOST': '',
-    #     'PORT': '',
-    # }
+    'default': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'xe',
+        'USER': 'Forum',
+        'PASSWORD': 'admin',
+        'HOST': '',
+        'PORT': '',
+    }
 }
 
 # Internationalization
@@ -101,9 +100,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static")
-]
 
 AUTHENTICATION_BACKENDS = ['Forum.tools.ForumAuthenticationBackend']

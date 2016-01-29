@@ -4,28 +4,28 @@ USE forum;
 
 INSERT INTO roles (role_name, description) VALUES
   ('admin', 'полный доступ.'),
-  ('moderator', 'руководит закреплёнными за ним разделами.'),
-  ('regular', 'обычный пользователь.'),
-  ('newbie', 'может читать разделы для обычных пользователей, но писать только в песочнице.');
+('moderator', 'руководит закреплёнными за ним разделами.'),
+('regular', 'обычный пользователь.'),
+('newbie', 'может читать разделы для обычных пользователей, но писать только в песочнице.');
 
 INSERT INTO ranks (rank_name, bonus_rating) VALUES
   ('rank_1', 1),
-  ('rank_2', 2),
-  ('rank_3', 3),
-  ('rank_4', 4);
+('rank_2', 2),
+('rank_3', 3),
+('rank_4', 4);
 
 INSERT INTO trophies (trophy_name) VALUES
   ('trophy_1'),
-  ('trophy_2'),
-  ('trophy_3'),
-  ('trophy_4'),
-  ('trophy_5');
+('trophy_2'),
+('trophy_3'),
+('trophy_4'),
+('trophy_5');
 
 INSERT INTO tags (tag_name) VALUES
   ('tag_1'),
-  ('tag_2'),
-  ('tag_3'),
-  ('tag_4');
+('tag_2'),
+('tag_3'),
+('tag_4');
 
 INSERT INTO users
 (role_id,
@@ -207,7 +207,7 @@ INSERT INTO journal (user_id, description, date)
 
 INSERT INTO sections (role_id, name, date, description) VALUES
   (3, 'section_1', now(), 'description'),
-  (4, 'section_2', now(), 'description');
+(4, 'section_2', now(), 'description');
 
 
 INSERT INTO topics (name, date, description, section_id, user_id)
