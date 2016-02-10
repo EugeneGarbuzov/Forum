@@ -1,31 +1,40 @@
-START TRANSACTION;
+INSERT INTO roles (name, description) VALUES
+  ('admin', 'полный доступ.');
+INSERT INTO roles (name, description) VALUES
+  ('moderator', 'руководит закреплёнными за ним разделами.');
+INSERT INTO roles (name, description) VALUES
+  ('regular', 'обычный пользователь.');
+INSERT INTO roles (name, description) VALUES
+  ('newbie', 'может читать разделы для обычных пользователей, но писать только в песочнице.');
 
-USE forum;
+INSERT INTO ranks (name, bonus_rating) VALUES
+  ('rank_1', 1);
+INSERT INTO ranks (name, bonus_rating) VALUES
+  ('rank_2', 2);
+INSERT INTO ranks (name, bonus_rating) VALUES
+  ('rank_3', 3);
+INSERT INTO ranks (name, bonus_rating) VALUES
+  ('rank_4', 4);
 
-INSERT INTO roles (role_name, description) VALUES
-  ('admin', 'полный доступ.'),
-('moderator', 'руководит закреплёнными за ним разделами.'),
-('regular', 'обычный пользователь.'),
-('newbie', 'может читать разделы для обычных пользователей, но писать только в песочнице.');
+INSERT INTO trophies (name) VALUES
+  ('trophy_1');
+INSERT INTO trophies (name) VALUES
+  ('trophy_2');
+INSERT INTO trophies (name) VALUES
+  ('trophy_3');
+INSERT INTO trophies (name) VALUES
+  ('trophy_4');
+INSERT INTO trophies (name) VALUES
+  ('trophy_5');
 
-INSERT INTO ranks (rank_name, bonus_rating) VALUES
-  ('rank_1', 1),
-('rank_2', 2),
-('rank_3', 3),
-('rank_4', 4);
-
-INSERT INTO trophies (trophy_name) VALUES
-  ('trophy_1'),
-('trophy_2'),
-('trophy_3'),
-('trophy_4'),
-('trophy_5');
-
-INSERT INTO tags (tag_name) VALUES
-  ('tag_1'),
-('tag_2'),
-('tag_3'),
-('tag_4');
+INSERT INTO tags (name) VALUES
+  ('tag_1');
+INSERT INTO tags (name) VALUES
+  ('tag_2');
+INSERT INTO tags (name) VALUES
+  ('tag_3');
+INSERT INTO tags (name) VALUES
+  ('tag_4');
 
 INSERT INTO users
 (role_id,
@@ -37,14 +46,14 @@ INSERT INTO users
 
  nickname,
  full_name,
- date,
+ join_date,
  status,
  signature)
 
   SELECT
 
-    role_id,
-    rank_id,
+    roles.id,
+    ranks.id,
 
     'user_1',
     'user',
@@ -52,12 +61,12 @@ INSERT INTO users
 
     'user 1',
     'name surname',
-    now(),
+    CURRENT_DATE,
     'status',
     'signature'
 
   FROM roles, ranks
-  WHERE roles.role_name = 'regular' AND ranks.rank_name = 'rank_1';
+  WHERE roles.name = 'regular' AND ranks.name = 'rank_1';
 
 INSERT INTO users
 (role_id,
@@ -69,14 +78,14 @@ INSERT INTO users
 
  nickname,
  full_name,
- date,
+ join_date,
  status,
  signature)
 
   SELECT
 
-    role_id,
-    rank_id,
+    roles.id,
+    ranks.id,
 
     'user_2',
     'user',
@@ -84,12 +93,12 @@ INSERT INTO users
 
     'user 2',
     'name surname',
-    now(),
+    CURRENT_DATE,
     'status',
     'signature'
 
   FROM roles, ranks
-  WHERE role_name = 'newbie' AND rank_name = 'rank_1';
+  WHERE roles.name = 'newbie' AND ranks.name = 'rank_1';
 
 INSERT INTO users
 (role_id,
@@ -101,14 +110,14 @@ INSERT INTO users
 
  nickname,
  full_name,
- date,
+ join_date,
  status,
  signature)
 
   SELECT
 
-    role_id,
-    rank_id,
+    roles.id,
+    ranks.id,
 
     'admin',
     'admin',
@@ -116,12 +125,12 @@ INSERT INTO users
 
     'admin',
     'name surname',
-    now(),
+    CURRENT_DATE,
     'status',
     'signature'
 
   FROM roles, ranks
-  WHERE roles.role_name = 'admin' AND ranks.rank_name = 'rank_4';
+  WHERE roles.name = 'admin' AND ranks.name = 'rank_4';
 
 INSERT INTO users
 (role_id,
@@ -133,14 +142,14 @@ INSERT INTO users
 
  nickname,
  full_name,
- date,
+ join_date,
  status,
  signature)
 
   SELECT
 
-    role_id,
-    rank_id,
+    roles.id,
+    ranks.id,
 
     'moderator_1',
     'moderator',
@@ -148,12 +157,12 @@ INSERT INTO users
 
     'moderator 1',
     'name surname',
-    now(),
+    CURRENT_DATE,
     'status',
     'signature'
 
   FROM roles, ranks
-  WHERE roles.role_name = 'moderator' AND ranks.rank_name = 'rank_2';
+  WHERE roles.name = 'moderator' AND ranks.name = 'rank_2';
 
 INSERT INTO users
 (role_id,
@@ -165,14 +174,14 @@ INSERT INTO users
 
  nickname,
  full_name,
- date,
+ join_date,
  status,
  signature)
 
   SELECT
 
-    role_id,
-    rank_id,
+    roles.id,
+    ranks.id,
 
     'moderator_2',
     'moderator',
@@ -180,123 +189,122 @@ INSERT INTO users
 
     'moderator 2',
     'name surname',
-    now(),
+    CURRENT_DATE,
     'status',
     'signature'
 
   FROM roles, ranks
-  WHERE roles.role_name = 'moderator' AND ranks.rank_name = 'rank_3';
+  WHERE roles.name = 'moderator' AND ranks.name = 'rank_3';
 
 
-INSERT INTO journal (user_id, description, date)
+INSERT INTO journal (user_id, description, entry_date)
   SELECT
-    user_id,
+    id,
     'action',
-    now()
+    CURRENT_DATE
   FROM users
   WHERE username = 'user_1';
 
-INSERT INTO journal (user_id, description, date)
+INSERT INTO journal (user_id, description, entry_date)
   SELECT
-    user_id,
+    id,
     'action',
-    now()
+    CURRENT_DATE
   FROM users
   WHERE username = 'user_2';
 
 
-INSERT INTO sections (role_id, name, date, description) VALUES
-  (3, 'section_1', now(), 'description'),
-(4, 'section_2', now(), 'description');
+INSERT INTO sections (role_id, name, create_date, description) VALUES
+  (3, 'section_1', CURRENT_DATE, 'description');
+INSERT INTO sections (role_id, name, create_date, description) VALUES
+  (4, 'section_2', CURRENT_DATE, 'description');
 
 
-INSERT INTO topics (name, date, description, section_id, user_id)
+INSERT INTO topics (name, create_date, description, section_id, user_id)
   SELECT
     'topic_1',
-    now(),
+    CURRENT_DATE,
     'description',
-    sections.section_id,
-    users.user_id
+    sections.id,
+    users.id
   FROM sections, users
   WHERE sections.name = 'section_1' AND users.username = 'user_1';
 
-INSERT INTO topics (name, date, description, section_id, user_id)
+INSERT INTO topics (name, create_date, description, section_id, user_id)
   SELECT
     'topic_2',
-    now(),
+    CURRENT_DATE,
     'description',
-    sections.section_id,
-    users.user_id
+    sections.id,
+    users.id
   FROM sections, users
   WHERE sections.name = 'section_2' AND users.username = 'user_2';
 
 
-INSERT INTO messages (date, text, rating, user_id, topic_id)
+INSERT INTO messages (create_date, text, rating, user_id, topic_id)
   SELECT
-    now(),
+    CURRENT_DATE,
     'message',
     0,
-    users.user_id,
-    topics.topic_id
+    users.id,
+    topics.id
   FROM users, topics
   WHERE users.username = 'user_1' AND topics.name = 'topic_1';
 
-INSERT INTO messages (date, text, rating, user_id, topic_id)
+INSERT INTO messages (create_date, text, rating, user_id, topic_id)
   SELECT
-    now(),
+    CURRENT_DATE,
     'message',
     0,
-    users.user_id,
-    topics.topic_id
+    users.id,
+    topics.id
   FROM users, topics
   WHERE users.username = 'user_2' AND topics.name = 'topic_2';
 
 
 INSERT INTO trophies_users (trophy_id, user_id, description)
   SELECT
-    trophies.trophy_id,
-    users.user_id,
+    trophies.id,
+    users.id,
     'description'
   FROM trophies, users
-  WHERE trophies.trophy_name = 'trophy_1' AND users.username = 'user_1';
+  WHERE trophies.name = 'trophy_1' AND users.username = 'user_1';
 
 INSERT INTO trophies_users (trophy_id, user_id, description)
   SELECT
-    trophies.trophy_id,
-    users.user_id,
+    trophies.id,
+    users.id,
     'description'
   FROM trophies, users
-  WHERE trophies.trophy_name = 'trophy_2' AND users.username = 'user_2';
+  WHERE trophies.name = 'trophy_2' AND users.username = 'user_2';
 
 
 INSERT INTO sections_users (section_id, user_id)
   SELECT
-    sections.section_id,
-    users.user_id
+    sections.id,
+    users.id
   FROM sections, users
   WHERE sections.name = 'section_1' AND users.username = 'moderator_1';
 
 INSERT INTO sections_users (section_id, user_id)
   SELECT
-    sections.section_id,
-    users.user_id
+    sections.id,
+    users.id
   FROM sections, users
   WHERE sections.name = 'section_2' AND users.username = 'moderator_2';
 
 
 INSERT INTO tags_topics (tag_id, topic_id)
   SELECT
-    tags.tag_id,
-    topics.topic_id
+    tags.id,
+    topics.id
   FROM tags, topics
-  WHERE tags.tag_name = 'tag_1' AND topics.name = 'topic_1';
+  WHERE tags.name = 'tag_1' AND topics.name = 'topic_1';
 
 
 INSERT INTO tags_topics (tag_id, topic_id)
   SELECT
-    tags.tag_id,
-    topics.topic_id
+    tags.id,
+    topics.id
   FROM tags, topics
-  WHERE tags.tag_name = 'tag_2' AND topics.name = 'topic_2';
-
-COMMIT;
+  WHERE tags.name = 'tag_2' AND topics.name = 'topic_2';
