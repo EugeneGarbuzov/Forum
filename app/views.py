@@ -37,8 +37,8 @@ def register(request):
     if request.method == 'POST':
         try:
             with connection.cursor() as cursor:
-                cursor.execute('''INSERT INTO users(role_id, rank_id, username, password, email, nickname, full_name, date, status,signature)
-                                  SELECT role_id, rank_id, %s, %s, %s, %s, %s, now(), %s, %s FROM ROLES, ranks
+                cursor.execute('''INSERT INTO users(role_id, rank_id, username, password, email, nickname, full_name, join_date, status,signature)
+                                  SELECT roles.id, ranks.id, %s, %s, %s, %s, %s, CURRENT_DATE, %s, %s FROM ROLES, ranks
                                   WHERE role_name = 'newbie' AND rank_name = 'rank_1';''',
                                (request.POST['username'], request.POST['password'], request.POST['email'],
                                 request.POST['nickname'], request.POST['full_name'],
@@ -66,17 +66,17 @@ def profile(request, username):
                               AND username = %s;''', username)
             user = fetch_to_dict(cursor)[0]
 
-            cursor.execute('''SELECT trophy_name, description
+            cursor.execute('''SELECT name, description
                               FROM trophies, trophies_users, users
-                              WHERE trophies.trophy_id = trophies_users.trophy_id
-                              AND trophies_users.user_id = users.user_id
+                              WHERE trophies.id = trophies_users.trophy_id
+                              AND trophies_users.user_id = users.id
                               AND username = %s;''', username)
             trophies = fetch_to_dict(cursor)
 
             cursor.execute('''SELECT sections.name
                               FROM users, sections_users, sections
-                              WHERE sections.section_id = sections_users.section_id
-                              AND sections_users.user_id = users.user_id
+                              WHERE sections.id = sections_users.section_id
+                              AND sections_users.user_id = users.id
                               AND username = %s;''', username)
             moderated_sections = cursor.fetchall()
 
@@ -100,14 +100,14 @@ def edit_profile(request):
             if request.method == 'GET':
                 cursor.execute('''SELECT email, nickname, full_name, status, signature
                                   FROM users
-                                  WHERE username = %s;''', username)
+                                  WHERE username = '%s';''', username)
                 user = fetch_to_dict(cursor)[0]
                 return render(request, 'edit_profile.html', user)
 
             elif request.method == 'POST':
-                cursor.execute('''UPDATE users SET password = %s, email = %s, nickname = %s,
-                                  full_name = %s, status = %s, signature = %s
-                                  WHERE username = %s;''',
+                cursor.execute('''UPDATE users SET password = '%s', email = '%s', nickname = '%s',
+                                  full_name = '%s', status = '%s', signature = '%s'
+                                  WHERE username = '%s';''',
                                (request.POST['password'], request.POST['email'],
                                 request.POST['nickname'], request.POST['full_name'],
                                 request.POST['status'], request.POST['signature'],
@@ -123,10 +123,10 @@ def index(request):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''SELECT nickname, role_name
+            cursor.execute('''SELECT nickname, name
                               FROM users, roles
-                              WHERE roles.role_id = users.role_id
-                              AND username = %s;''', username)
+                              WHERE roles.id = users.role_id
+                              AND username = '%s';''', username)
             nickname, role = cursor.fetchone()
         else:
             nickname = ''
@@ -134,19 +134,19 @@ def index(request):
 
         roles = check_roles(role)
 
-        cursor.execute('''SELECT s.name, s.description, s.date,
-                          (SELECT role_name FROM roles WHERE roles.role_id = s.role_id)  AS role_name
-                          FROM sections AS s, ROLES AS r
-                          WHERE s.role_id = r.role_id
-                          AND r.role_name IN %s;''', [tuple(roles)])
+        cursor.execute('''SELECT s.name, s.description, s.create_date,
+                          (SELECT name FROM roles WHERE roles.id = s.role_id)  AS role_name
+                          FROM sections s, roles r
+                          WHERE s.role_id = r.id
+                          AND r.name IN (':0');''', (roles,))
         sections = fetch_to_dict(cursor)
 
         for section in sections:
             cursor.execute('''SELECT username, nickname
                               FROM users, sections, sections_users
-                              WHERE users.user_id = sections_users.user_id
-                              AND sections_users.section_id = sections.section_id
-                              AND name = %s;''', section['name'])
+                              WHERE users.id = sections_users.user_id
+                              AND sections_users.section_id = sections.id
+                              AND name = '%s';''', section['name'])
             section['moderators'] = fetch_to_dict(cursor)
 
     context = {'user': {'nickname': nickname, 'username': username, 'is_admin': role == 'admin'},
