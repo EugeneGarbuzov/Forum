@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Section {{ section_name }}</title>
+  <title>Section {{ SECTION_NAME }}</title>
 </head>
 <body>
 
@@ -23,25 +23,25 @@
         Section:
       </td>
       <td>
-        {{ section_name }}
+        {{ SECTION_NAME }}
       </td>
     </tr>
   </table>
 
   <ul>
-    {% for topic in topics %}
+    {% for TOPIC in TOPICS %}
       <li>
         <h3>
-          <a href="{% url 'topic' topic.section_name topic.name %}">
-            {{ topic.name }}
+          <a href="{% url 'topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+            {{ TOPIC.NAME }}
           </a>
         </h3>
-        Created: {{ topic.date }}
+        Created: {{ TOPIC.CREATE_DATE }}
         <br/>
 
         Author:
-        <a href="{% url 'profile' topic.username %}">
-          {{ topic.nickname }}
+        <a href="{% url 'profile' TOPIC.USERNAME %}">
+          {{ TOPIC.NICKNAME }}
         </a>
         <br/>
 
@@ -51,20 +51,20 @@
             <td>
               Tags:
             </td>
-            {% for tag in topic.tags %}
+            {% for TAG in TOPIC.TAGS %}
               <td>
-                <a href="{% url 'topics_by_tag' tag %}">
-                  {{ tag }}
+                <a href="{% url 'topics_by_tag' TAG %}">
+                  {{ TAG }}
                 </a>
               </td>
             {% endfor %}
           </tr>
         </table>
 
-        {% if is_moderator %}
+        {% if IS_MODERATOR %}
 
-          <a href="{% url 'remove_topic' topic.section_name topic.name %}">
-            Remove kebab
+          <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+            Remove
           </a>
         {% endif %}
 
@@ -72,11 +72,11 @@
     {% endfor %}
   </ul>
 
-  {% if can_create_topic %}
+  {% if CAN_CREATE_TOPIC %}
     <table>
       <tr>
         <td>
-          <a href="{% url 'add_topic' section_name %}">
+          <a href="{% url 'add_topic' SECTION_NAME %}">
             Add Topic
           </a>
         </td>

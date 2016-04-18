@@ -13,7 +13,7 @@
         Nickname:
       </td>
       <td>
-        {{ user_info.nickname }}
+        {{ USER_INFO.NICKNAME }}
       </td>
     </tr>
     <tr>
@@ -21,7 +21,7 @@
         Full name:
       </td>
       <td>
-        {{ user_info.full_name }}
+        {{ USER_INFO.FULL_NAME }}
       </td>
     </tr>
     <tr>
@@ -29,7 +29,7 @@
         Status:
       </td>
       <td>
-        {{ user_info.status }}
+        {{ USER_INFO.STATUS }}
       </td>
     </tr>
     <tr>
@@ -37,7 +37,7 @@
         Signature:
       </td>
       <td>
-        {{ user_info.signature }}
+        {{ USER_INFO.SIGNATURE }}
       </td>
     </tr>
     <tr>
@@ -45,7 +45,7 @@
         Role:
       </td>
       <td>
-        {{ user_info.role_name }}
+        {{ USER_INFO.ROLE_NAME }}
       </td>
     </tr>
 
@@ -54,22 +54,22 @@
         Rank:
       </td>
       <td>
-        {{ user_info.rank_name }} ({{ user_info.bonus_rating }})
+        {{ USER_INFO.RANK_NAME }} ({{ USER_INFO.BONUS_RATING }})
       </td>
     </tr>
 
-    {% if moderated_sections %}
+    {% if MODERATED_SECTIONS %}
       <tr>
         <td>
           Moderated sections:
         </td>
         <td>
           <table>
-            {% for section in moderated_sections %}
+            {% for SECTION in MODERATED_SECTIONS %}
               <tr>
                 <td>
-                  <a href="{% url 'section' section %}">
-                    {{ section }}
+                  <a href="{% url 'section' SECTION %}">
+                    {{ SECTION }}
                   </a>
                 </td>
               </tr>
@@ -79,7 +79,7 @@
       </tr>
     {% endif %}
 
-    {% if trophies %}
+    {% if TROPHIES %}
       <tr>
         <td>
           Trophies:
@@ -87,13 +87,13 @@
         <td>
 
           <table>
-            {% for trophy in trophies %}
+            {% for TROPHY in TROPHIES %}
               <tr>
                 <td>
-                  {{ trophy.trophy_name }}:
+                  {{ TROPHY.TROPHY_NAME }}:
                 </td>
                 <td>
-                  {{ trophy.description }}
+                  {{ TROPHY.DESCRIPTION }}
                 </td>
               </tr>
             {% endfor %}
@@ -103,7 +103,7 @@
       </tr>
     {% endif %}
 
-    {% if user.get_username == user_info.username %}
+    {% if user.get_username == USER_INFO.USERNAME %}
       <tr>
         <td>
           <a href="{% url 'edit_profile' %}">

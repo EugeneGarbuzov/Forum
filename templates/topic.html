@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Section {{ section_name }}, topic {{ topic_name }}</title>
+  <title>Section {{ SECTION_NAME }}, topic {{ TOPIC_NAME }}</title>
 </head>
 <body>
 
@@ -10,7 +10,7 @@
   <table>
     <tr>
       <td>
-        <a href="{% url 'section' section_name %}">
+        <a href="{% url 'section' SECTION_NAME %}">
           Back to topics list
         </a>
       </td>
@@ -23,7 +23,7 @@
         Section:
       </td>
       <td>
-        {{ section_name }}
+        {{ SECTION_NAME }}
       </td>
     </tr>
     <tr>
@@ -31,40 +31,40 @@
         Topic:
       </td>
       <td>
-        {{ topic_name }}
+        {{ TOPIC_NAME }}
       </td>
     </tr>
   </table>
 
   <ul>
-    {% for message in messages %}
+    {% for MESSAGE in MESSAGES %}
       <li>
         <h3>
-          {{ message.text }}
+          {{ MESSAGE.TEXT }}
         </h3>
 
-        Date: {{ message.date }}
+        Date: {{ MESSAGE.CREATE_DATE }}
         <br/>
 
         Author:
-        <a href="{% url 'profile' message.username %}">
-          {{ message.nickname }}
+        <a href="{% url 'profile' MESSAGE.USERNAME %}">
+          {{ MESSAGE.NICKNAME }}
         </a>
         <br/>
 
-        <a href="{% url 'like_message' section_name topic_name message.message_id %}">
-          Like: {{ message.rating }}
+        <a href="{% url 'like_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
+          Like: {{ MESSAGE.RATING }}
         </a>
 
         <br/>
 
-        {% if user.is_moderator or user.username == message.username %}
-          <a href="{% url 'remove_message' section_name topic_name message.message_id %}">
+        {% if USER.IS_MODERATOR or USER.USERNAME == MESSAGE.USERNAME %}
+          <a href="{% url 'remove_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
             Remove
           </a>
 
           <br/>
-          <a href="{% url 'edit_message' section_name topic_name message.message_id %}">
+          <a href="{% url 'edit_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
             Edit
           </a>
         {% endif %}
@@ -73,8 +73,8 @@
     {% endfor %}
   </ul>
 
-  {% if user.can_add_message %}
-    <form method="post" action="{% url 'add_message' section_name topic_name %}">
+  {% if USER.CAN_ADD_MESSAGE %}
+    <form method="post" action="{% url 'add_message' SECTION_NAME TOPIC_NAME %}">
       {% csrf_token %}
       <table>
         <tr>

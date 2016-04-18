@@ -7,7 +7,7 @@
 <body>
 
 <div>
-  <form method="post" action="{% url 'edit_message' section_name topic_name message_id %}">
+  <form method="post" action="{% url 'edit_message' SECTION_NAME TOPIC_NAME MESSAGE_ID %}">
     {% csrf_token %}
     <table>
       <tr>
@@ -15,7 +15,7 @@
           Date:
         </td>
         <td>
-          {{ message.date }}
+          {{ MESSAGE.CREATE_DATE }}
         </td>
       </tr>
       <tr>
@@ -23,8 +23,8 @@
           Author:
         </td>
         <td>
-          <a href="{% url 'profile' message.username %}">
-            {{ message.nickname }}
+          <a href="{% url 'profile' MESSAGE.USERNAME %}">
+            {{ MESSAGE.NICKNAME }}
           </a>
         </td>
       </tr>
@@ -34,7 +34,7 @@
           Likes:
         </td>
         <td>
-          {{ message.rating }}
+          {{ MESSAGE.RATING }}
         </td>
       </tr>
       <tr>
@@ -42,7 +42,7 @@
           <label for="text">Message: </label>
         </td>
         <td>
-          <textarea id="text" name="text">{{ message.text }}</textarea>
+          <textarea id="text" name="text">{{ MESSAGE.TEXT }}</textarea>
         </td>
       </tr>
       <tr>

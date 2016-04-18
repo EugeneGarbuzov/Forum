@@ -13,7 +13,7 @@
         Tag:
       </td>
       <td>
-        {{ tag_name }}
+        {{ TAG_NAME }}
       </td>
     </tr>
     <tr>
@@ -21,31 +21,31 @@
         References:
       </td>
       <td>
-        {{ topics|length }}
+        {{ TOPICS|length }}
       </td>
     </tr>
   </table>
 
   <ul>
-    {% for topic in topics %}
+    {% for TOPIC in TOPICS %}
       <li>
         <h3>
-          <a href="{% url 'topic' topic.section_name topic.name %}">
-            {{ topic.name }}
+          <a href="{% url 'topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+            {{ TOPIC.NAME }}
           </a>
         </h3>
-        Created: {{ topic.date }}
+        Created: {{ TOPIC.DATE }}
         <br/>
 
         Author:
-        <a href="{% url 'profile' topic.username %}">
-          {{ topic.nickname }}
+        <a href="{% url 'profile' TOPIC.USERNAME %}">
+          {{ TOPIC.NICKNAME }}
         </a>
         <br/>
 
-        {% if is_moderator %}
+        {% if IS_MODERATOR %}
           <br/>
-          <a href="{% url 'remove_topic' section_name topic.name %}">
+          <a href="{% url 'remove_topic' SECTION_NAME TOPIC.NAME %}">
             Remove
           </a>
         {% endif %}

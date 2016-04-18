@@ -8,11 +8,11 @@
 
 <div>
   <table>
-    {% if user.username %}
+    {% if USER.USERNAME %}
       <tr>
         <td>
-          <a href="{% url 'profile' user.username %}">
-            {{ user.nickname }}
+          <a href="{% url 'profile' USER.USERNAME %}">
+            {{ USER.NICKNAME }}
           </a>
         </td>
         <td>
@@ -38,40 +38,40 @@
   </table>
 
   <ul>
-    {% for section in sections %}
+    {% for SECTION in SECTIONS %}
       <li>
         <h3>
-          <a href="{% url 'section' section.name %}">
-            {{ section.name }}
+          <a href="{% url 'section' SECTION.NAME %}">
+            {{ SECTION.NAME }}
           </a>
         </h3>
       </li>
-      Created: {{ section.date }}
+      Created: {{ SECTION.CREATE_DATE }}
       <br/>
 
       Moderators:
-      {% for moderator in section.moderators %}
-        <a href="{% url 'profile' moderator.username %}">
-          {{ moderator.nickname }}
+      {% for MODERATOR in SECTION.MODERATORS %}
+        <a href="{% url 'profile' MODERATOR.USERNAME %}">
+          {{ MODERATOR.NICKNAME }}
         </a>
       {% endfor %}
       <br/>
 
-      Category: {{ section.role_name }}
+      Category: {{ SECTION.ROLE_NAME }}
       <br/>
 
-      Description: {{ section.description }}
+      description: {{ SECTION.DESCRIPTION }}
       <br/>
-      {% if user.is_admin %}
+      {% if USER.IS_ADMIN %}
 
-        <a href="{% url 'remove_section' section.name %}">
+        <a href="{% url 'remove_section' SECTION.NAME %}">
           Remove section
         </a>
       {% endif %}
     {% endfor %}
   </ul>
 
-  {% if user.is_admin %}
+  {% if USER.IS_ADMIN %}
     <table>
       <tr>
         <td>
