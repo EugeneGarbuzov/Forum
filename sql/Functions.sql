@@ -92,7 +92,6 @@ CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAU
 CREATE OR REPLACE FUNCTION user_info(user_name VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
-
     OPEN result FOR SELECT
                       username,
                       nickname,
@@ -114,7 +113,6 @@ CREATE OR REPLACE FUNCTION user_info(user_name VARCHAR2)
 CREATE OR REPLACE FUNCTION user_trophies(user_name VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
-
     OPEN result FOR SELECT
                       name,
                       description
@@ -129,7 +127,6 @@ CREATE OR REPLACE FUNCTION user_trophies(user_name VARCHAR2)
 CREATE OR REPLACE FUNCTION user_moderated_sections(user_name VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
-
     OPEN result FOR SELECT sections.name
                     FROM users, sections_users, sections
                     WHERE sections.id = sections_users.section_id
@@ -137,4 +134,31 @@ CREATE OR REPLACE FUNCTION user_moderated_sections(user_name VARCHAR2)
                           AND username = user_name;
     RETURN result;
   END user_moderated_sections;
+
+CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT
+                      email,
+                      nickname,
+                      full_name,
+                      status,
+                      signature
+                    FROM users
+                    WHERE username = user_name;
+    RETURN result;
+  END private_user_info;
+
+CREATE OR REPLACE PROCEDURE update_private_user_info(user_name    VARCHAR2, password_new VARCHAR2, email_new VARCHAR2,
+                                                     nickname_new VARCHAR2, full_name_new VARCHAR2,
+                                                     status_new   VARCHAR2, signature_new VARCHAR2)
+IS
+  BEGIN
+    UPDATE users
+    SET password = password_new, email = email_new, nickname = nickname_new,
+      full_name  = full_name_new, status = status_new, signature = signature_new
+    WHERE username = user_name;
+
+    log_add(user_name, 'edited profile');
+  END update_private_user_info;
 

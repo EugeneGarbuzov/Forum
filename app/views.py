@@ -69,28 +69,19 @@ def edit_profile(request):
 
     if not username:
         return HttpResponseRedirect(reverse('index'))
-    # try:
-    with connection.cursor() as cursor:
-        if request.method == 'GET':
-            cursor.execute('''SELECT email, nickname, full_name, status, signature
-                              FROM users
-                              WHERE username = %s;''', (username,))
-            user = fetch_to_dict(cursor)[0]
-            return render(request, 'edit_profile.html', user)
+    try:
+        with connection.cursor() as cursor:
+            if request.method == 'GET':
+                user = fetch_to_dict(cursor.callfunc('private_user_info', cx_Oracle.CURSOR, (username,)))[0]
+                return render(request, 'edit_profile.html', user)
 
-        elif request.method == 'POST':
-            cursor.execute('''UPDATE users SET password = %s, email = %s, nickname = %s,
-                              full_name = %s, status = %s, signature = %s
-                              WHERE username = %s;''',
-                           (request.POST['password'], request.POST['email'],
-                            request.POST['nickname'], request.POST['full_name'],
-                            request.POST['status'], request.POST['signature'],
-                            username))
-            cursor.callproc("log_add", (request.user.username, 'edited profile'))
-            # log(request.user.username, 'edited profile')
-            return HttpResponseRedirect(reverse('index'))
-            # except:
-            #     return render(request, 'edit_profile.html', {'ERROR': 1})
+            elif request.method == 'POST':
+                cursor.callproc("update_private_user_info", (username, request.POST['password'], request.POST['email'],
+                                                             request.POST['nickname'], request.POST['full_name'],
+                                                             request.POST['status'], request.POST['signature']))
+                return HttpResponseRedirect(reverse('index'))
+    except:
+        return render(request, 'edit_profile.html', {'ERROR': 1})
 
 
 def index(request):
