@@ -7,21 +7,8 @@ def fetch_to_dict(cursor):
     return [dict(zip([col[0] for col in desc], row)) for row in cursor.fetchall()]
 
 
-def check_roles(role, mode='read'):
-    if role == 'admin':
-        return 'admin', 'moderator', 'regular', 'newbie'
-
-    if role == 'moderator':
-        return 'moderator', 'regular', 'newbie'
-
-    if role == 'regular':
-        return 'regular', 'newbie'
-
-    if role == 'newbie':
-        if mode == 'read':
-            return 'regular', 'newbie'
-        elif mode == 'write':
-            return 'newbie',
+def fetch_to_tuple(cursor):
+    return tuple(row[0] for row in cursor.fetchall())
 
 
 class ForumAuthenticationBackend:

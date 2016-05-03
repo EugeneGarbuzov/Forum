@@ -1,13 +1,11 @@
+import cx_Oracle
 from django.contrib import auth
 from django.core.urlresolvers import reverse
 from django.db import connection
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict, check_roles
-
-
-# Create your views here.
+from Forum.tools import fetch_to_dict, fetch_to_tuple
 
 
 def login(request):
@@ -53,27 +51,9 @@ def register(request):
 def profile(request, username):
     try:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT username, nickname, full_name, join_date, status,
-                              signature, roles.name AS ROLE_NAME, RANKS.name AS RANK_NAME, bonus_rating
-                              FROM USERS, ROLES, RANKS
-                              WHERE USERS.role_id = ROLES.id
-                              AND ranks.id = USERS.rank_id
-                              AND username = %s''', (username,))
-            user = fetch_to_dict(cursor)[0]
-
-            cursor.execute('''SELECT name, description
-                              FROM trophies, trophies_users, users
-                              WHERE trophies.id = trophies_users.trophy_id
-                              AND trophies_users.user_id = users.id
-                              AND username = %s;''', (username,))
-            trophies = fetch_to_dict(cursor)
-
-            cursor.execute('''SELECT sections.name
-                              FROM users, sections_users, sections
-                              WHERE sections.id = sections_users.section_id
-                              AND sections_users.user_id = users.id
-                              AND username = %s;''', (username,))
-            moderated_sections = cursor.fetchall()
+            user = fetch_to_dict(cursor.callfunc('user_info', cx_Oracle.CURSOR, (username,)))[0]
+            trophies = fetch_to_dict(cursor.callfunc('user_trophies', cx_Oracle.CURSOR, (username,)))
+            moderated_sections = cursor.callfunc('user_moderated_sections', cx_Oracle.CURSOR, (username,)).fetchall()
 
             if moderated_sections:
                 moderated_sections = moderated_sections[0]
@@ -127,7 +107,7 @@ def index(request):
             nickname = ''
             role = 'newbie'
 
-        roles = check_roles(role)
+        roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (role,)))
 
         cursor.execute('''SELECT s.name, s.description, s.create_date,
                           (SELECT name FROM roles WHERE roles.id = s.role_id)  AS role_name
@@ -215,7 +195,8 @@ def section(request, section_name):
                           AND sections.name = %s;''', (section_name,))
         section_role = cursor.fetchone()[0]
 
-        if section_role not in check_roles(user_role):
+        roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,)))
+        if section_role not in roles:
             return HttpResponseRedirect(reverse('index'))
 
         cursor.execute('''SELECT username
@@ -241,7 +222,9 @@ def section(request, section_name):
                               WHERE topics.name = %s;''', (topic['NAME'],))
             topic['TAGS'] = (row[0] for row in cursor.fetchall())
 
-    context = {'CAN_CREATE_TOPIC': section_role in check_roles(user_role, 'write'),
+        roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write')))
+
+    context = {'CAN_CREATE_TOPIC': section_role in roles,
                'IS_MODERATOR': is_moderator,
                'SECTION_NAME': section_name,
                'TOPICS': topics}
@@ -268,7 +251,7 @@ def add_topic(request, section_name):
                           AND sections.name = %s;''', (section_name,))
         section_role = cursor.fetchone()[0]
 
-        if section_role in check_roles(user_role):
+        if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
             if request.method == 'GET':
                 return render(request, 'add_topic.html', {'section_name': section_name})
 
@@ -340,7 +323,7 @@ def topics_by_tag(request, tag_name):
         else:
             user_role = 'newbie'
 
-        allowed_roles = check_roles(user_role)
+        allowed_roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,)))
 
         cursor.execute('''SELECT tp.name, tp.description, tp.create_date, u.nickname, u.username, s.name AS section_name
                           FROM tags tg, tags_topics tt, topics tp, sections s, ROLES r, USERS u
@@ -377,7 +360,7 @@ def topic(request, section_name, topic_name):
                           AND sections.name = %s;''', (section_name,))
         section_role = cursor.fetchone()[0]
 
-        if section_role in check_roles(user_role):
+        if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
             cursor.execute('''SELECT count(*) FROM topics WHERE topics.name = %s;''', (topic_name,))
 
             if cursor.fetchone()[0]:
@@ -396,7 +379,7 @@ def topic(request, section_name, topic_name):
                 moderators = (row[0] for row in cursor.fetchall())
 
                 is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
-                can_add_message = section_role in check_roles(user_role, mode='write') and username
+                can_add_message = section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))) and username
 
                 context = {'SECTION_NAME': section_name, 'TOPIC_NAME': topic_name,
                            'MESSAGES': messages,
@@ -425,7 +408,7 @@ def add_message(request, section_name, topic_name):
                               AND sections.name = %s;''', (section_name,))
             section_role = cursor.fetchone()[0]
 
-            if section_role in check_roles(user_role, mode='write'):
+            if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))):
                 cursor.execute('''INSERT INTO messages (create_date, text, rating, user_id, topic_id)
                                   SELECT CURRENT_DATE, %s, 0, USERS.id, topics.id
                                   FROM USERS, topics
