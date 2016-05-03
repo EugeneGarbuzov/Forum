@@ -35,23 +35,17 @@ def register(request):
         return HttpResponseRedirect(reverse('index'))
 
     if request.method == 'POST':
-        # try:
-        with connection.cursor() as cursor:
-            cursor.execute('''INSERT INTO users(role_id, rank_id, username, password, email, nickname, full_name, join_date, status,signature)
-                                  SELECT roles.id, ranks.id, %s, %s, %s, %s, %s, CURRENT_DATE, %s, %s FROM ROLES, ranks
-                                  WHERE ROLES.name = 'newbie' AND ranks.name = 'rank_1';''',
-                           (request.POST['username'], request.POST['password'], request.POST['email'],
-                            request.POST['nickname'], request.POST['full_name'],
-                            request.POST['status'], request.POST['signature']))
-            user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
-            auth.login(request, user)
+        try:
+            with connection.cursor() as cursor:
+                cursor.callproc("register", (request.POST['username'], request.POST['password'], request.POST['email'],
+                                request.POST['nickname'], request.POST['full_name'],
+                                request.POST['status'], request.POST['signature']))
+                user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+                auth.login(request, user)
 
-            # журналирование событий в базе данных
-            cursor.callproc("log_add", (request.POST['username'], 'registered'))
-            # log(request.POST['username'], 'registered')
-            return HttpResponseRedirect(reverse('index'))
-            # except:
-            #     return render(request, 'register.html', {'ERROR': 1})
+                return HttpResponseRedirect(reverse('index'))
+        except:
+            return render(request, 'register.html', {'ERROR': 1})
 
     return render(request, "register.html")
 

@@ -23,6 +23,7 @@ def check_roles(role, mode='read'):
         elif mode == 'write':
             return 'newbie',
 
+
 class ForumAuthenticationBackend:
     def authenticate(self, username=None, password=None):
 
