@@ -4,7 +4,7 @@ from django.db import connection
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict, check_roles, log
+from Forum.tools import fetch_to_dict, check_roles
 
 
 # Create your views here.
@@ -47,7 +47,8 @@ def register(request):
             auth.login(request, user)
 
             # журналирование событий в базе данных
-            log(request.POST['username'], 'registered')
+            cursor.callproc("log_add", (request.POST['username'], 'registered'))
+            # log(request.POST['username'], 'registered')
             return HttpResponseRedirect(reverse('index'))
             # except:
             #     return render(request, 'register.html', {'ERROR': 1})
@@ -84,7 +85,6 @@ def profile(request, username):
                 moderated_sections = moderated_sections[0]
 
             context = {'USER_INFO': user, 'TROPHIES': trophies, 'MODERATED_SECTIONS': moderated_sections}
-            print(context)
             return render(request, 'profile.html', context)
     except:
         return HttpResponseRedirect(reverse('index'))
@@ -112,7 +112,8 @@ def edit_profile(request):
                             request.POST['nickname'], request.POST['full_name'],
                             request.POST['status'], request.POST['signature'],
                             username))
-            log(request.user.username, 'edited profile')
+            cursor.callproc("log_add", (request.user.username, 'edited profile'))
+            # log(request.user.username, 'edited profile')
             return HttpResponseRedirect(reverse('index'))
             # except:
             #     return render(request, 'edit_profile.html', {'ERROR': 1})
@@ -175,7 +176,8 @@ def add_section(request):
                                           SELECT id, %s, CURRENT_DATE, %s
                                           FROM ROLES WHERE NAME = %s;''',
                                        (request.POST['name'], request.POST['description'], request.POST['role_name']))
-                        log(request.user.username, 'added section {}'.format(request.POST['name']))
+                        cursor.callproc("log_add", (request.user.username, 'added section {}'.format(request.POST['name'])))
+                        # log(request.user.username, 'added section {}'.format(request.POST['name']))
         except:
             return render(request, 'add_section.html', {'ERROR': 1})
 
@@ -195,7 +197,7 @@ def remove_section(request, section_name):
 
             if role == 'admin':
                 cursor.execute('''DELETE FROM sections WHERE name = %s''', (section_name,))
-                log(request.user.username, 'removed section {}'.format(section_name))
+                cursor.callproc("log_add", (request.user.username, 'removed section {}'.format(section_name)))
 
     return HttpResponseRedirect(reverse('index'))
 
@@ -284,7 +286,7 @@ def add_topic(request, section_name):
                                       WHERE NAME = %s
                                       AND username = %s;''',
                                    (request.POST['name'], request.POST['description'], section_name, username))
-                    log(request.user.username, 'added topic {}'.format(request.POST['name']))
+                    cursor.callproc("log_add", (request.user.username, 'added topic {}'.format(request.POST['name'])))
 
                     if request.POST['tags']:
                         tags = set(request.POST['tags'].split())
@@ -326,7 +328,7 @@ def remove_topic(request, section_name, topic_name):
 
                 if user_role == 'admin' or username in moderators:
                     cursor.execute('''DELETE FROM topics WHERE name = %s''', (topic_name,))
-                    log(request.user.username, 'removed topic {}'.format(topic_name))
+                    cursor.callproc("log_add", (request.user.username, 'removed topic {}'.format(topic_name)))
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
@@ -436,7 +438,7 @@ def add_message(request, section_name, topic_name):
                                   WHERE username = %s
                                   AND NAME = %s;''',
                                (request.POST['text'], username, topic_name))
-                log(request.user.username, 'added message')
+                cursor.callproc("log_add", (request.user.username, 'added message'))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -500,7 +502,7 @@ def remove_message(request, section_name, topic_name, message_id):
             if username == message_creator or user_role == 'admin' or (
                             user_role == 'moderator' and username in moderators):
                 cursor.execute('''DELETE FROM messages WHERE id = %s''', (message_id,))
-                log(request.user.username, 'removed message id:{}'.format(message_id))
+                cursor.callproc("log_add", (request.user.username, 'removed message id:{}'.format(message_id)))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -545,6 +547,6 @@ def edit_message(request, section_name, topic_name, message_id):
                     cursor.execute('''UPDATE messages SET text = %s
                                       WHERE ID = %s;''',
                                    (request.POST['text'], message_id))
-                    log(request.user.username, 'edited message id:{}'.format(message_id))
+                    cursor.callproc("log_add", (request.user.username, 'edited message id:{}'.format(message_id)))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
