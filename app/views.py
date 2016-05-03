@@ -36,8 +36,8 @@ def register(request):
         try:
             with connection.cursor() as cursor:
                 cursor.callproc("register", (request.POST['username'], request.POST['password'], request.POST['email'],
-                                request.POST['nickname'], request.POST['full_name'],
-                                request.POST['status'], request.POST['signature']))
+                                             request.POST['nickname'], request.POST['full_name'],
+                                             request.POST['status'], request.POST['signature']))
                 user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
                 auth.login(request, user)
 
@@ -150,7 +150,8 @@ def add_section(request):
                                           SELECT id, %s, CURRENT_DATE, %s
                                           FROM ROLES WHERE NAME = %s;''',
                                        (request.POST['name'], request.POST['description'], request.POST['role_name']))
-                        cursor.callproc("log_add", (request.user.username, 'added section {}'.format(request.POST['name'])))
+                        cursor.callproc("log_add",
+                                        (request.user.username, 'added section {}'.format(request.POST['name'])))
                         # log(request.user.username, 'added section {}'.format(request.POST['name']))
         except:
             return render(request, 'add_section.html', {'ERROR': 1})
@@ -379,7 +380,8 @@ def topic(request, section_name, topic_name):
                 moderators = (row[0] for row in cursor.fetchall())
 
                 is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
-                can_add_message = section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))) and username
+                can_add_message = section_role in fetch_to_tuple(
+                    cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))) and username
 
                 context = {'SECTION_NAME': section_name, 'TOPIC_NAME': topic_name,
                            'MESSAGES': messages,
