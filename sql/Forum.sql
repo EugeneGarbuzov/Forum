@@ -19,6 +19,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 
 CREATE TABLE ranks (
@@ -42,6 +43,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE trophies (
   id   NUMBER       NOT NULL PRIMARY KEY,
@@ -63,6 +65,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE tags (
   id   NUMBER       NOT NULL PRIMARY KEY,
@@ -84,6 +87,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE users (
   id        NUMBER       NOT NULL PRIMARY KEY,
@@ -118,6 +122,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE journal (
   id          NUMBER        NOT NULL PRIMARY KEY,
@@ -143,6 +148,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE sections (
   id          NUMBER       NOT NULL PRIMARY KEY,
@@ -168,6 +174,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 
 CREATE TABLE topics (
@@ -199,6 +206,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE messages (
   id          NUMBER        NOT NULL PRIMARY KEY,
@@ -229,6 +237,7 @@ WHEN (new.id IS NULL)
     INTO :new.id
     FROM dual;
   END;
+  /
 
 CREATE TABLE trophies_users (
   trophy_id   NUMBER       NOT NULL,

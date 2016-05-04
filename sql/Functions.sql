@@ -9,6 +9,7 @@ IS
       FROM USERS
       WHERE username = user_name;
   END log_add;
+  /
 
 
 CREATE OR REPLACE PROCEDURE register(username  VARCHAR2, password VARCHAR2, email VARCHAR2, nickname VARCHAR2,
@@ -32,6 +33,7 @@ IS
 
     log_add(username, 'registered');
   END register;
+  /
 
 
 -- CREATE OR REPLACE TRIGGER register_log
@@ -87,6 +89,7 @@ CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAU
     END IF;
 
   END check_roles;
+  /
 
 
 CREATE OR REPLACE FUNCTION user_info(user_name VARCHAR2)
@@ -108,6 +111,7 @@ CREATE OR REPLACE FUNCTION user_info(user_name VARCHAR2)
                           AND username = user_name;
     RETURN result;
   END user_info;
+  /
 
 
 CREATE OR REPLACE FUNCTION user_trophies(user_name VARCHAR2)
@@ -122,6 +126,7 @@ CREATE OR REPLACE FUNCTION user_trophies(user_name VARCHAR2)
                           AND username = user_name;
     RETURN result;
   END user_trophies;
+  /
 
 
 CREATE OR REPLACE FUNCTION user_moderated_sections(user_name VARCHAR2)
@@ -134,6 +139,7 @@ CREATE OR REPLACE FUNCTION user_moderated_sections(user_name VARCHAR2)
                           AND username = user_name;
     RETURN result;
   END user_moderated_sections;
+  /
 
 
 CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
@@ -149,6 +155,7 @@ CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
                     WHERE username = user_name;
     RETURN result;
   END private_user_info;
+  /
 
 
 CREATE OR REPLACE PROCEDURE update_private_user_info(user_name    VARCHAR2, password_new VARCHAR2, email_new VARCHAR2,
@@ -163,6 +170,7 @@ IS
 
     log_add(user_name, 'edited profile');
   END update_private_user_info;
+  /
 
 
 CREATE OR REPLACE FUNCTION user_role_nickname(user_name VARCHAR2)
@@ -175,6 +183,7 @@ CREATE OR REPLACE FUNCTION user_role_nickname(user_name VARCHAR2)
                     WHERE roles.id = users.role_id AND username = user_name;
     RETURN result;
   END user_role_nickname;
+  /
 
 
 CREATE OR REPLACE FUNCTION get_section_moderators(section_name VARCHAR2)
@@ -189,6 +198,7 @@ CREATE OR REPLACE FUNCTION get_section_moderators(section_name VARCHAR2)
                           AND name = section_name;
     RETURN result;
   END get_section_moderators;
+  /
 
 
 CREATE OR REPLACE PROCEDURE add_section(user_name VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role VARCHAR2)
@@ -205,6 +215,7 @@ IS
 
     log_add(user_name, 'added section ' || name_);
   END add_section;
+  /
 
 
 CREATE OR REPLACE PROCEDURE remove_section(user_name VARCHAR2, name_ VARCHAR2)
@@ -224,6 +235,7 @@ IS
     END IF;
 
   END remove_section;
+  /
 
 
 CREATE OR REPLACE FUNCTION section_role(name_ VARCHAR2)
@@ -238,6 +250,7 @@ IS
           AND sections.name = name_;
     RETURN role;
   END section_role;
+  /
 
 
 CREATE OR REPLACE FUNCTION get_topics(section_name VARCHAR2)
@@ -256,6 +269,7 @@ CREATE OR REPLACE FUNCTION get_topics(section_name VARCHAR2)
                           AND s.name = section_name;
     RETURN result;
   END get_topics;
+  /
 
 
 CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
@@ -268,3 +282,4 @@ CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
                     WHERE topics.name = topic_name;
     RETURN result;
   END get_topic_tags;
+  /
