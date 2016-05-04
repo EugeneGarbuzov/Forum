@@ -5,7 +5,7 @@ from django.db import connection
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict, fetch_to_tuple
+from Forum.tools import fetch_to_dict, fetch_to_tuple, cursor_callfunc
 
 
 def login(request):
@@ -89,31 +89,17 @@ def index(request):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''SELECT nickname, name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            nickname, role = cursor.fetchone()
+            nickname, role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
         else:
             nickname = ''
             role = 'newbie'
 
         roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (role,)))
-
-        cursor.execute('''SELECT s.name, s.description, s.create_date,
-                          (SELECT name FROM roles WHERE roles.id = s.role_id)  AS role_name
-                          FROM sections s, roles r
-                          WHERE s.role_id = r.id
-                          AND r.name IN {0};'''.format(roles))
-        sections = fetch_to_dict(cursor)
+        sections = fetch_to_dict(cursor_callfunc('get_allowed_sections', cx_Oracle.CURSOR, roles, cursor))
 
         for section in sections:
-            cursor.execute('''SELECT username, nickname
-                              FROM users, sections, sections_users
-                              WHERE users.id = sections_users.user_id
-                              AND sections_users.section_id = sections.id
-                              AND name = %s;''', (section['NAME'],))
-            section['MODERATORS'] = fetch_to_dict(cursor)
+            section['MODERATORS'] = fetch_to_dict(
+                cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section['NAME'],)))
 
     context = {'USER': {'NICKNAME': nickname, 'USERNAME': username, 'IS_ADMIN': role == 'admin'},
                'SECTIONS': sections}
@@ -127,26 +113,17 @@ def add_section(request):
     if username:
         try:
             with connection.cursor() as cursor:
-                cursor.execute('''SELECT name
-                                  FROM users, roles
-                                  WHERE roles.id = users.role_id
-                                  AND username = %s;''', (username,))
-                role = cursor.fetchone()[0]
+                nickname, role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
 
                 if role == 'admin':
                     if request.method == 'GET':
                         return render(request, 'add_section.html')
                     elif request.method == 'POST':
-                        cursor.execute('''INSERT INTO sections(role_id, name, create_date, description)
-                                          SELECT id, %s, CURRENT_DATE, %s
-                                          FROM ROLES WHERE NAME = %s;''',
-                                       (request.POST['name'], request.POST['description'], request.POST['role_name']))
-                        cursor.callproc("log_add",
-                                        (request.user.username, 'added section {}'.format(request.POST['name'])))
-                        # log(request.user.username, 'added section {}'.format(request.POST['name']))
+                        cursor.callproc("add_section", (
+                            username, request.POST['name'], request.POST['description'],
+                            request.POST['role_name']))
         except:
             return render(request, 'add_section.html', {'ERROR': 1})
-
     return HttpResponseRedirect(reverse('index'))
 
 
@@ -155,15 +132,7 @@ def remove_section(request, section_name):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            role = cursor.fetchone()[0]
-
-            if role == 'admin':
-                cursor.execute('''DELETE FROM sections WHERE name = %s''', (section_name,))
-                cursor.callproc("log_add", (request.user.username, 'removed section {}'.format(section_name)))
+            cursor.callproc("remove_section", (username, section_name))
 
     return HttpResponseRedirect(reverse('index'))
 
@@ -173,46 +142,25 @@ def section(request, section_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
         else:
             user_role = 'newbie'
 
-        cursor.execute('''SELECT roles.name
-                          FROM sections, roles
-                          WHERE roles.id = sections.role_id
-                          AND sections.name = %s;''', (section_name,))
-        section_role = cursor.fetchone()[0]
+        section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
         roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,)))
         if section_role not in roles:
             return HttpResponseRedirect(reverse('index'))
 
-        cursor.execute('''SELECT username
-                          FROM users, sections, sections_users
-                          WHERE users.id = sections_users.user_id
-                          AND sections_users.section_id = sections.id
-                          AND name = %s;''', (section_name,))
-        moderators = (row[0] for row in cursor.fetchall())
+        moderators = (row[0] for row in
+                      cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
         is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
-
-        cursor.execute('''SELECT t.name, t.description, t.create_date, u.nickname, u.username, s.name AS section_name
-                          FROM topics t, users u, sections s
-                          WHERE u.id = t.user_id
-                          AND t.section_id = s.id
-                          AND s.name = %s;''', (section_name,))
-        topics = fetch_to_dict(cursor)
+        topics = fetch_to_dict(cursor.callfunc('get_topics', cx_Oracle.CURSOR, (section_name,)))
 
         for topic in topics:
-            cursor.execute('''SELECT tags.name FROM tags_topics
-                              JOIN tags ON tags.id = tags_topics.tag_id
-                              JOIN topics ON topics.id = tags_topics.topic_id
-                              WHERE topics.name = %s;''', (topic['NAME'],))
-            topic['TAGS'] = (row[0] for row in cursor.fetchall())
+            topic['TAGS'] = (row[0] for row in
+                             cursor.callfunc('get_topic_tags', cx_Oracle.CURSOR, (topic['NAME'],)).fetchall())
 
         roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write')))
 
@@ -229,19 +177,11 @@ def add_topic(request, section_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
         else:
             user_role = 'newbie'
 
-        cursor.execute('''SELECT roles.name
-                          FROM sections, roles
-                          WHERE roles.id = sections.role_id
-                          AND sections.name = %s;''', (section_name,))
-        section_role = cursor.fetchone()[0]
+        section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
         if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
             if request.method == 'GET':
@@ -280,20 +220,12 @@ def remove_topic(request, section_name, topic_name):
     if username:
         with connection.cursor() as cursor:
 
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
 
             if user_role in ('admin', 'moderator'):
 
-                cursor.execute('''SELECT username
-                                  FROM users, sections, sections_users
-                                  WHERE users.id = sections_users.user_id
-                                  AND sections_users.section_id = sections.id
-                                  AND name = %s;''', (section_name,))
-                moderators = (row[0] for row in cursor.fetchall())
+                moderators = (row[0] for row in
+                              cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
                 if user_role == 'admin' or username in moderators:
                     cursor.execute('''DELETE FROM topics WHERE name = %s''', (topic_name,))
@@ -307,11 +239,7 @@ def topics_by_tag(request, tag_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
         else:
             user_role = 'newbie'
 
@@ -338,19 +266,11 @@ def topic(request, section_name, topic_name):
 
     with connection.cursor() as cursor:
         if username:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
         else:
             user_role = 'newbie'
 
-        cursor.execute('''SELECT roles.name
-                          FROM sections, roles
-                          WHERE roles.id = sections.role_id
-                          AND sections.name = %s;''', (section_name,))
-        section_role = cursor.fetchone()[0]
+        section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
         if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
             cursor.execute('''SELECT count(*) FROM topics WHERE topics.name = %s;''', (topic_name,))
@@ -363,12 +283,8 @@ def topic(request, section_name, topic_name):
                                   AND topics.name = %s;''', (topic_name,))
                 messages = fetch_to_dict(cursor)
 
-                cursor.execute('''SELECT username
-                                  FROM users, sections, sections_users
-                                  WHERE users.id = sections_users.user_id
-                                  AND sections_users.section_id = sections.id
-                                  AND name = %s;''', (section_name,))
-                moderators = (row[0] for row in cursor.fetchall())
+                moderators = (row[0] for row in
+                              cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
                 is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
                 can_add_message = section_role in fetch_to_tuple(
@@ -389,17 +305,9 @@ def add_message(request, section_name, topic_name):
 
     if username and request.method == 'POST':
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
 
-            cursor.execute('''SELECT roles.name
-                              FROM sections, roles
-                              WHERE roles.id = sections.role_id
-                              AND sections.name = %s;''', (section_name,))
-            section_role = cursor.fetchone()[0]
+            section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
             if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))):
                 cursor.execute('''INSERT INTO messages (create_date, text, rating, user_id, topic_id)
@@ -450,11 +358,7 @@ def remove_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
 
             cursor.execute('''SELECT username
                               FROM messages, users
@@ -462,12 +366,8 @@ def remove_message(request, section_name, topic_name, message_id):
                               AND messages.id = %s;''', (message_id,))
             message_creator = cursor.fetchone()[0]
 
-            cursor.execute('''SELECT username
-                              FROM users, sections, sections_users
-                              WHERE users.id = sections_users.user_id
-                              AND sections_users.section_id = sections.id
-                              AND name = %s;''', (section_name,))
-            moderators = (row[0] for row in cursor.fetchall())
+            moderators = (row[0] for row in
+                          cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
             if username == message_creator or user_role == 'admin' or (
                             user_role == 'moderator' and username in moderators):
@@ -482,11 +382,7 @@ def edit_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT name
-                              FROM users, roles
-                              WHERE roles.id = users.role_id
-                              AND username = %s;''', (username,))
-            user_role = cursor.fetchone()[0]
+            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
 
             cursor.execute('''SELECT username
                               FROM messages, users
@@ -494,12 +390,8 @@ def edit_message(request, section_name, topic_name, message_id):
                               AND messages.id = %s;''', (message_id,))
             message_creator = cursor.fetchone()[0]
 
-            cursor.execute('''SELECT username
-                              FROM users, sections, sections_users
-                              WHERE users.id = sections_users.user_id
-                              AND sections_users.section_id = sections.id
-                              AND name = %s;''', (section_name,))
-            moderators = (row[0] for row in cursor.fetchall())
+            moderators = (row[0] for row in
+                          cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
             if username == message_creator or user_role == 'admin' or (
                             user_role == 'moderator' and username in moderators):

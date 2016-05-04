@@ -135,6 +135,7 @@ CREATE OR REPLACE FUNCTION user_moderated_sections(user_name VARCHAR2)
     RETURN result;
   END user_moderated_sections;
 
+
 CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
@@ -149,6 +150,7 @@ CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
     RETURN result;
   END private_user_info;
 
+
 CREATE OR REPLACE PROCEDURE update_private_user_info(user_name    VARCHAR2, password_new VARCHAR2, email_new VARCHAR2,
                                                      nickname_new VARCHAR2, full_name_new VARCHAR2,
                                                      status_new   VARCHAR2, signature_new VARCHAR2)
@@ -162,3 +164,107 @@ IS
     log_add(user_name, 'edited profile');
   END update_private_user_info;
 
+
+CREATE OR REPLACE FUNCTION user_role_nickname(user_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT
+                      nickname,
+                      name
+                    FROM users, roles
+                    WHERE roles.id = users.role_id AND username = user_name;
+    RETURN result;
+  END user_role_nickname;
+
+
+CREATE OR REPLACE FUNCTION get_section_moderators(section_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT
+                      username,
+                      nickname
+                    FROM users, sections, sections_users
+                    WHERE users.id = sections_users.user_id
+                          AND sections_users.section_id = sections.id
+                          AND name = section_name;
+    RETURN result;
+  END get_section_moderators;
+
+
+CREATE OR REPLACE PROCEDURE add_section(user_name VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role VARCHAR2)
+IS
+  BEGIN
+    INSERT INTO sections (role_id, name, create_date, description)
+      SELECT
+        id,
+        name_,
+        CURRENT_DATE,
+        description_
+      FROM ROLES
+      WHERE NAME = role;
+
+    log_add(user_name, 'added section ' || name_);
+  END add_section;
+
+
+CREATE OR REPLACE PROCEDURE remove_section(user_name VARCHAR2, name_ VARCHAR2)
+IS
+  role VARCHAR2(30);
+  BEGIN
+    SELECT name
+    INTO role
+    FROM users, roles
+    WHERE roles.id = users.role_id AND username = user_name;
+
+    IF role = 'admin'
+    THEN
+      DELETE FROM sections
+      WHERE name = name_;
+      log_add(user_name, 'removed section' || name_);
+    END IF;
+
+  END remove_section;
+
+
+CREATE OR REPLACE FUNCTION section_role(name_ VARCHAR2)
+  RETURN VARCHAR2
+IS
+  role VARCHAR2(30);
+  BEGIN
+    SELECT roles.name
+    INTO role
+    FROM sections, roles
+    WHERE roles.id = sections.role_id
+          AND sections.name = name_;
+    RETURN role;
+  END section_role;
+
+
+CREATE OR REPLACE FUNCTION get_topics(section_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT
+                      t.name,
+                      t.description,
+                      t.create_date,
+                      u.nickname,
+                      u.username,
+                      s.name AS section_name
+                    FROM topics t, users u, sections s
+                    WHERE u.id = t.user_id
+                          AND t.section_id = s.id
+                          AND s.name = section_name;
+    RETURN result;
+  END get_topics;
+
+
+CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT tags.name
+                    FROM tags_topics
+                      JOIN tags ON tags.id = tags_topics.tag_id
+                      JOIN topics ON topics.id = tags_topics.topic_id
+                    WHERE topics.name = topic_name;
+    RETURN result;
+  END get_topic_tags;
