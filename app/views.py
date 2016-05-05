@@ -188,14 +188,10 @@ def add_topic(request, section_name):
                 return render(request, 'add_topic.html', {'section_name': section_name})
 
             elif request.method == 'POST':
+                cursor.callproc("add_topic",
+                                (request.POST['name'], request.POST['description'], section_name, username))
                 try:
-                    cursor.execute('''INSERT INTO topics(section_id, user_id, name, create_date, description)
-                                      SELECT sections.id, users.id, %s, CURRENT_DATE, %s
-                                      FROM sections, USERS
-                                      WHERE NAME = %s
-                                      AND username = %s;''',
-                                   (request.POST['name'], request.POST['description'], section_name, username))
-                    cursor.callproc("log_add", (request.user.username, 'added topic {}'.format(request.POST['name'])))
+
 
                     if request.POST['tags']:
                         tags = set(request.POST['tags'].split())
@@ -228,8 +224,7 @@ def remove_topic(request, section_name, topic_name):
                               cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
                 if user_role == 'admin' or username in moderators:
-                    cursor.execute('''DELETE FROM topics WHERE name = %s''', (topic_name,))
-                    cursor.callproc("log_add", (request.user.username, 'removed topic {}'.format(topic_name)))
+                    cursor.callproc("remove_topic", (topic_name, request.user.username))
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 

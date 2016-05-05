@@ -283,3 +283,25 @@ CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
     RETURN result;
   END get_topic_tags;
   /
+
+CREATE OR REPLACE PROCEDURE add_topic
+  (name_ VARCHAR2, description_ VARCHAR2, section_name VARCHAR2, username_ VARCHAR2)
+IS
+  BEGIN
+    INSERT INTO topics(section_id, user_id, name, create_date, description)
+      SELECT sections.id, users.id, name_, CURRENT_DATE, description_
+      FROM sections, users
+      WHERE NAME = section_name
+      AND username = username_;
+
+    log_add(username_, ' added topic ' || name_);
+  END add_topic;
+  /
+
+CREATE OR REPLACE PROCEDURE remove_topic(topic_name VARCHAR2, username VARCHAR2)
+IS
+  BEGIN
+    DELETE FROM topics WHERE name = topic_name;
+    log_add(username || ' removed topic ' || topic_name);
+  END remove_topic;
+  /
