@@ -188,22 +188,13 @@ def add_topic(request, section_name):
                 return render(request, 'add_topic.html', {'section_name': section_name})
 
             elif request.method == 'POST':
-                cursor.callproc("add_topic",
+                cursor.callproc('add_topic',
                                 (request.POST['name'], request.POST['description'], section_name, username))
                 try:
-
-
                     if request.POST['tags']:
                         tags = set(request.POST['tags'].split())
-                        cursor.execute('''SELECT name FROM tags;''')
-                        existing_tags = (row[0] for row in cursor.fetchall())
                         for tag in tags:
-                            if tag not in existing_tags:
-                                cursor.execute('''INSERT INTO tags(name) VALUES (%s);''', (tag,))
-                            cursor.execute('''INSERT INTO tags_topics(tag_id, topic_id)
-                                              SELECT tags.id, topics.id FROM tags, topics
-                                              WHERE tags.name = %s
-                                              AND topics.name = %s;''', (tag, request.POST['name']))
+                            cursor.callproc('add_tag', (tag, request.POST['name']))
                 except:
                     return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
 
@@ -224,7 +215,7 @@ def remove_topic(request, section_name, topic_name):
                               cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
 
                 if user_role == 'admin' or username in moderators:
-                    cursor.callproc("remove_topic", (topic_name, request.user.username))
+                    cursor.callproc('remove_topic', (topic_name, request.user.username))
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
@@ -268,9 +259,8 @@ def topic(request, section_name, topic_name):
         section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
         if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
-            cursor.execute('''SELECT count(*) FROM topics WHERE topics.name = %s;''', (topic_name,))
-
-            if cursor.fetchone()[0]:
+            exists = cursor.callfunc('topic_exists', cx_Oracle.NUMBER, (topic_name,))
+            if int(exists):
                 cursor.execute('''SELECT messages.id, username, nickname, text, messages.create_date, rating
                                   FROM messages, users, topics
                                   WHERE users.id = messages.user_id

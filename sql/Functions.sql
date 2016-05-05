@@ -284,6 +284,7 @@ CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
   END get_topic_tags;
   /
 
+
 CREATE OR REPLACE PROCEDURE add_topic
   (name_ VARCHAR2, description_ VARCHAR2, section_name VARCHAR2, username_ VARCHAR2)
 IS
@@ -294,14 +295,46 @@ IS
       WHERE NAME = section_name
       AND username = username_;
 
-    log_add(username_, ' added topic ' || name_);
+    log_add(username_, 'added topic ' || name_);
   END add_topic;
   /
+
 
 CREATE OR REPLACE PROCEDURE remove_topic(topic_name VARCHAR2, username VARCHAR2)
 IS
   BEGIN
     DELETE FROM topics WHERE name = topic_name;
-    log_add(username || ' removed topic ' || topic_name);
+    log_add(username, 'removed topic ' || topic_name);
   END remove_topic;
+  /
+
+
+CREATE OR REPLACE FUNCTION topic_exists(topic_name VARCHAR2)
+  RETURN NUMBER
+  IS
+    result NUMBER;
+  BEGIN
+    SELECT COUNT(*) INTO result FROM topics
+      WHERE topics.name = topic_name;
+    RETURN result;
+  END topic_exists;
+  /
+
+
+CREATE OR REPLACE PROCEDURE add_tag(tag_ VARCHAR2, topic_name VARCHAR2)
+  IS
+    tag_exists NUMBER := 0;
+  BEGIN
+    BEGIN
+      SELECT 1 INTO tag_exists FROM dual
+        WHERE tag_ IN (SELECT name FROM tags);
+      EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+          INSERT INTO tags(name) VALUES (tag_);
+    END;
+    INSERT INTO tags_topics(tag_id, topic_id)
+      SELECT tags.id, topics.id FROM tags, topics
+        WHERE tags.name = tag_
+          AND topics.name = topic_name;
+  END add_tag;
   /
