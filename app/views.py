@@ -261,12 +261,7 @@ def topic(request, section_name, topic_name):
         if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
             exists = cursor.callfunc('topic_exists', cx_Oracle.NUMBER, (topic_name,))
             if int(exists):
-                cursor.execute('''SELECT messages.id, username, nickname, text, messages.create_date, rating
-                                  FROM messages, users, topics
-                                  WHERE users.id = messages.user_id
-                                  AND messages.topic_id = topics.id
-                                  AND topics.name = %s;''', (topic_name,))
-                messages = fetch_to_dict(cursor)
+                messages = fetch_to_dict(cursor.callfunc('get_messages', cx_Oracle.CURSOR, (topic_name,)))
 
                 moderators = (row[0] for row in
                               cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
@@ -295,13 +290,7 @@ def add_message(request, section_name, topic_name):
             section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
             if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))):
-                cursor.execute('''INSERT INTO messages (create_date, text, rating, user_id, topic_id)
-                                  SELECT CURRENT_DATE, %s, 0, USERS.id, topics.id
-                                  FROM USERS, topics
-                                  WHERE username = %s
-                                  AND NAME = %s;''',
-                               (request.POST['text'], username, topic_name))
-                cursor.callproc("log_add", (request.user.username, 'added message'))
+                cursor.callproc('add_message', (request.POST['text'], request.user.username, topic_name))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -311,29 +300,7 @@ def like_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            cursor.execute('''SELECT bonus_rating
-                              FROM users, ranks
-                              WHERE ranks.id = users.rank_id
-                              AND username = %s;''', (username,))
-            bonus_rating = cursor.fetchone()[0]
-
-            cursor.execute('''SELECT count(*) FROM likes
-                              JOIN users ON users.id = user_id
-                              WHERE message_id = %s
-                              AND username = %s;''', (message_id, username))
-            already_liked = cursor.fetchone()[0] > 0
-
-            cursor.execute('''SELECT username FROM messages
-                              JOIN users ON users.id = messages.user_id
-                              WHERE messages.id = %s;''', (message_id,))
-            is_message_author = cursor.fetchone()[0] == username
-
-            if not already_liked and not is_message_author:
-                cursor.execute('''UPDATE messages SET rating = messages.rating + %s
-                                  WHERE id = %s;''', (bonus_rating, message_id))
-                cursor.execute('''INSERT INTO likes (message_id, user_id)
-                                  SELECT %s, ID FROM USERS
-                                  WHERE username = %s;''', (message_id, username))
+            cursor.callproc('add_like', (username, message_id))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
