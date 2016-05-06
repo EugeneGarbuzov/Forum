@@ -185,8 +185,7 @@ def add_topic(request, section_name):
                     'add_topic', (username, section_name, request.POST['name'], request.POST['description']))
                 try:
                     if request.POST['tags']:
-                        for tag in set(request.POST['tags'].split()):
-                            cursor.callproc('add_tag', (request.POST['name'], tag))
+                        cursor.callproc('add_tags', (request.POST['name'], request.POST['tags']))
                 except:
                     return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
 

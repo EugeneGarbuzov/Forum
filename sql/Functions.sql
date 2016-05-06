@@ -382,28 +382,33 @@ IS
 /
 
 
-CREATE OR REPLACE PROCEDURE add_tag(topic_name VARCHAR2, tag_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_tags(topic_name VARCHAR2, tags_ VARCHAR2)
 IS
   tag_exists NUMBER := 0;
   BEGIN
-    BEGIN
-      SELECT 1
-      INTO tag_exists
-      FROM dual
-      WHERE tag_ IN (SELECT name
-                     FROM tags);
-      EXCEPTION
-      WHEN NO_DATA_FOUND THEN
-      INSERT INTO tags (name) VALUES (tag_);
-    END;
-    INSERT INTO tags_topics (tag_id, topic_id)
-      SELECT
-        tags.id,
-        topics.id
-      FROM tags, topics
-      WHERE tags.name = tag_
-            AND topics.name = topic_name;
-  END add_tag;
+    FOR tag IN ( SELECT regexp_substr(tags_, '\S+', 1, LEVEL) tag_name
+                 FROM dual
+                 CONNECT BY regexp_substr(tags_, '\S+', 1, LEVEL) IS NOT NULL)
+    LOOP
+      BEGIN
+        SELECT 1
+        INTO tag_exists
+        FROM dual
+        WHERE tag.tag_name IN (SELECT name
+                       FROM tags);
+        EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+        INSERT INTO tags (name) VALUES (tag.tag_name);
+      END;
+      INSERT INTO tags_topics (tag_id, topic_id)
+        SELECT
+          tags.id,
+          topics.id
+        FROM tags, topics
+        WHERE tags.name = tag.tag_name
+              AND topics.name = topic_name;
+    END LOOP;
+  END add_tags;
 /
 
 
