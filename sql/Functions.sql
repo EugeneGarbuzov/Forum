@@ -1,4 +1,4 @@
-CREATE OR REPLACE PROCEDURE log_add(user_name VARCHAR2, message VARCHAR2)
+CREATE OR REPLACE PROCEDURE log_add(username_ VARCHAR2, message VARCHAR2)
 IS
   BEGIN
     INSERT INTO journal (user_id, description, entry_date)
@@ -7,7 +7,7 @@ IS
         message,
         CURRENT_DATE
       FROM USERS
-      WHERE username = user_name;
+      WHERE username = username_;
   END log_add;
 /
 
@@ -34,15 +34,6 @@ IS
     log_add(username, 'registered');
   END register;
 /
-
-
--- CREATE OR REPLACE TRIGGER register_log
--- AFTER INSERT ON users FOR EACH ROW
---   BEGIN
---     log_add(:new.username, 'registered');
---   END;
---
--- DROP TRIGGER register_log;
 
 
 CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAULT 'read')
@@ -92,7 +83,7 @@ CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAU
 /
 
 
-CREATE OR REPLACE FUNCTION user_info(user_name VARCHAR2)
+CREATE OR REPLACE FUNCTION user_info(username_ VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
     OPEN result FOR SELECT
@@ -108,13 +99,13 @@ CREATE OR REPLACE FUNCTION user_info(user_name VARCHAR2)
                     FROM USERS, ROLES, RANKS
                     WHERE USERS.role_id = ROLES.id
                           AND ranks.id = USERS.rank_id
-                          AND username = user_name;
+                          AND username = username_;
     RETURN result;
   END user_info;
 /
 
 
-CREATE OR REPLACE FUNCTION user_trophies(user_name VARCHAR2)
+CREATE OR REPLACE FUNCTION user_trophies(username_ VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
     OPEN result FOR SELECT
@@ -123,26 +114,26 @@ CREATE OR REPLACE FUNCTION user_trophies(user_name VARCHAR2)
                     FROM trophies, trophies_users, users
                     WHERE trophies.id = trophies_users.trophy_id
                           AND trophies_users.user_id = users.id
-                          AND username = user_name;
+                          AND username = username_;
     RETURN result;
   END user_trophies;
 /
 
 
-CREATE OR REPLACE FUNCTION user_moderated_sections(user_name VARCHAR2)
+CREATE OR REPLACE FUNCTION user_moderated_sections(username_ VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
     OPEN result FOR SELECT sections.name
                     FROM users, sections_users, sections
                     WHERE sections.id = sections_users.section_id
                           AND sections_users.user_id = users.id
-                          AND username = user_name;
+                          AND username = username_;
     RETURN result;
   END user_moderated_sections;
 /
 
 
-CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
+CREATE OR REPLACE FUNCTION private_user_info(username_ VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
     OPEN result FOR SELECT
@@ -152,35 +143,35 @@ CREATE OR REPLACE FUNCTION private_user_info(user_name VARCHAR2)
                       status,
                       signature
                     FROM users
-                    WHERE username = user_name;
+                    WHERE username = username_;
     RETURN result;
   END private_user_info;
 /
 
 
-CREATE OR REPLACE PROCEDURE update_private_user_info(user_name    VARCHAR2, password_new VARCHAR2, email_new VARCHAR2,
-                                                     nickname_new VARCHAR2, full_name_new VARCHAR2,
-                                                     status_new   VARCHAR2, signature_new VARCHAR2)
+CREATE OR REPLACE PROCEDURE update_private_user_info(username_ VARCHAR2, password_ VARCHAR2, email_ VARCHAR2,
+                                                     nickname_ VARCHAR2, full_name_ VARCHAR2,
+                                                     status_   VARCHAR2, signature_ VARCHAR2)
 IS
   BEGIN
     UPDATE users
-    SET password = password_new, email = email_new, nickname = nickname_new,
-      full_name  = full_name_new, status = status_new, signature = signature_new
-    WHERE username = user_name;
+    SET password = password_, email = email_, nickname = nickname_,
+      full_name  = full_name_, status = status_, signature = signature_
+    WHERE username = username_;
 
-    log_add(user_name, 'edited profile');
+    log_add(username_, 'edited profile');
   END update_private_user_info;
 /
 
 
-CREATE OR REPLACE FUNCTION user_role_nickname(user_name VARCHAR2)
+CREATE OR REPLACE FUNCTION user_role_nickname(username_ VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
     OPEN result FOR SELECT
                       nickname,
                       name
                     FROM users, roles
-                    WHERE roles.id = users.role_id AND username = user_name;
+                    WHERE roles.id = users.role_id AND username = username_;
     RETURN result;
   END user_role_nickname;
 /
@@ -201,7 +192,7 @@ CREATE OR REPLACE FUNCTION get_section_moderators(section_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_section(user_name VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_section(username_ VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role VARCHAR2)
 IS
   BEGIN
     INSERT INTO sections (role_id, name, create_date, description)
@@ -213,32 +204,32 @@ IS
       FROM ROLES
       WHERE NAME = role;
 
-    log_add(user_name, 'added section ' || name_);
+    log_add(username_, 'added section ' || name_);
   END add_section;
 /
 
 
-CREATE OR REPLACE PROCEDURE remove_section(user_name VARCHAR2, name_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE remove_section(username_ VARCHAR2, name_ VARCHAR2)
 IS
   role VARCHAR2(30);
   BEGIN
     SELECT name
     INTO role
     FROM users, roles
-    WHERE roles.id = users.role_id AND username = user_name;
+    WHERE roles.id = users.role_id AND username = username_;
 
     IF role = 'admin'
     THEN
       DELETE FROM sections
       WHERE name = name_;
-      log_add(user_name, 'removed section' || name_);
+      log_add(username_, 'removed section' || name_);
     END IF;
 
   END remove_section;
 /
 
 
-CREATE OR REPLACE FUNCTION section_role(name_ VARCHAR2)
+CREATE OR REPLACE FUNCTION section_role(section_name VARCHAR2)
   RETURN VARCHAR2
 IS
   role VARCHAR2(30);
@@ -247,7 +238,7 @@ IS
     INTO role
     FROM sections, roles
     WHERE roles.id = sections.role_id
-          AND sections.name = name_;
+          AND sections.name = section_name;
     RETURN role;
   END section_role;
 /
@@ -285,8 +276,7 @@ CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_topic
-  (name_ VARCHAR2, description_ VARCHAR2, section_name VARCHAR2, username_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_topic(name_ VARCHAR2, description_ VARCHAR2, section_name VARCHAR2, username_ VARCHAR2)
 IS
   BEGIN
     INSERT INTO topics (section_id, user_id, name, create_date, description)
@@ -373,8 +363,7 @@ CREATE OR REPLACE FUNCTION get_messages(topic_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_message
-  (text VARCHAR2, username_ VARCHAR2, topic_name VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_message(text VARCHAR2, username_ VARCHAR2, topic_name VARCHAR2)
 IS
   BEGIN
     INSERT INTO messages (create_date, text, rating, user_id, topic_id)
@@ -398,6 +387,7 @@ IS
   already_liked NUMBER;
   author_name   VARCHAR2(30);
   rating_to_add NUMBER;
+
   BEGIN
     SELECT COUNT(*)
     INTO already_liked
@@ -405,6 +395,7 @@ IS
       JOIN users ON users.id = user_id
     WHERE message_id = message_id_
           AND username = username_;
+
     IF already_liked > 0
     THEN
       RETURN;
@@ -414,23 +405,28 @@ IS
     FROM messages
       JOIN users ON users.id = messages.user_id
     WHERE messages.id = message_id_;
+
     IF username_ = author_name
     THEN
       RETURN;
     END IF;
+
     SELECT bonus_rating
     INTO rating_to_add
     FROM users, ranks
     WHERE ranks.id = users.rank_id
           AND username = username_;
+
     UPDATE messages
     SET rating = messages.rating + rating_to_add
     WHERE id = message_id_;
+
     INSERT INTO likes (message_id, user_id)
       SELECT
         message_id_,
         id
       FROM users
       WHERE username = username_;
+
   END add_like;
 /
