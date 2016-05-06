@@ -53,10 +53,8 @@ def profile(request, username):
         with connection.cursor() as cursor:
             user = fetch_to_dict(cursor.callfunc('user_info', cx_Oracle.CURSOR, (username,)))[0]
             trophies = fetch_to_dict(cursor.callfunc('user_trophies', cx_Oracle.CURSOR, (username,)))
-            moderated_sections = cursor.callfunc('user_moderated_sections', cx_Oracle.CURSOR, (username,)).fetchall()
-
-            if moderated_sections:
-                moderated_sections = moderated_sections[0]
+            moderated_sections = [row[0] for row in
+                                  cursor.callfunc('user_moderated_sections', cx_Oracle.CURSOR, (username,)).fetchall()]
 
             context = {'USER_INFO': user, 'TROPHIES': trophies, 'MODERATED_SECTIONS': moderated_sections}
             return render(request, 'profile.html', context)
@@ -66,9 +64,9 @@ def profile(request, username):
 
 def edit_profile(request):
     username = request.user.username
-
     if not username:
         return HttpResponseRedirect(reverse('index'))
+
     try:
         with connection.cursor() as cursor:
             if request.method == 'GET':
@@ -89,19 +87,19 @@ def index(request):
 
     with connection.cursor() as cursor:
         if username:
-            nickname, role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            user = fetch_to_dict(cursor.callfunc('user_info', cx_Oracle.CURSOR, (username,)))[0]
+            nickname, user_role = user['NICKNAME'], user['ROLE_NAME']
         else:
-            nickname = ''
-            role = 'newbie'
+            nickname, user_role = '', 'newbie'
 
-        roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (role,)))
+        roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,)))
         sections = fetch_to_dict(cursor_callfunc('get_allowed_sections', cx_Oracle.CURSOR, roles, cursor))
 
         for section in sections:
             section['MODERATORS'] = fetch_to_dict(
                 cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section['NAME'],)))
 
-    context = {'USER': {'NICKNAME': nickname, 'USERNAME': username, 'IS_ADMIN': role == 'admin'},
+    context = {'USER': {'NICKNAME': nickname, 'USERNAME': username, 'IS_ADMIN': user_role == 'admin'},
                'SECTIONS': sections}
 
     return render(request, 'index.html', context)
@@ -113,17 +111,16 @@ def add_section(request):
     if username:
         try:
             with connection.cursor() as cursor:
-                nickname, role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+                user_role = cursor.callfunc('user_role', cx_Oracle.STRING, (username,))
 
-                if role == 'admin':
-                    if request.method == 'GET':
-                        return render(request, 'add_section.html')
-                    elif request.method == 'POST':
-                        cursor.callproc("add_section", (
-                            username, request.POST['name'], request.POST['description'],
-                            request.POST['role_name']))
+                if request.method == 'GET' and user_role == 'admin':
+                    return render(request, 'add_section.html')
+                elif request.method == 'POST':
+                    cursor.callproc("add_section", (
+                        username, request.POST['name'], request.POST['description'], request.POST['role_name']))
         except:
             return render(request, 'add_section.html', {'ERROR': 1})
+
     return HttpResponseRedirect(reverse('index'))
 
 
@@ -142,7 +139,7 @@ def section(request, section_name):
 
     with connection.cursor() as cursor:
         if username:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            user_role = cursor.callfunc('user_role', cx_Oracle.STRING, (username,))
         else:
             user_role = 'newbie'
 
@@ -152,10 +149,7 @@ def section(request, section_name):
         if section_role not in roles:
             return HttpResponseRedirect(reverse('index'))
 
-        moderators = (row[0] for row in
-                      cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
-
-        is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
+        is_moderator = int(cursor.callfunc('is_moderator', cx_Oracle.NUMBER, (username, section_name,)))
         topics = fetch_to_dict(cursor.callfunc('get_topics', cx_Oracle.CURSOR, (section_name,)))
 
         for topic in topics:
@@ -177,24 +171,22 @@ def add_topic(request, section_name):
 
     with connection.cursor() as cursor:
         if username:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            user_role = cursor.callfunc('user_role', cx_Oracle.STRING, (username,))
         else:
             user_role = 'newbie'
 
-        section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
-
-        if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
+        if cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,)) \
+                in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
             if request.method == 'GET':
                 return render(request, 'add_topic.html', {'section_name': section_name})
 
             elif request.method == 'POST':
-                cursor.callproc('add_topic',
-                                (request.POST['name'], request.POST['description'], section_name, username))
+                cursor.callproc(
+                    'add_topic', (username, section_name, request.POST['name'], request.POST['description']))
                 try:
                     if request.POST['tags']:
-                        tags = set(request.POST['tags'].split())
-                        for tag in tags:
-                            cursor.callproc('add_tag', (tag, request.POST['name']))
+                        for tag in set(request.POST['tags'].split()):
+                            cursor.callproc('add_tag', (request.POST['name'], tag))
                 except:
                     return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
 
@@ -206,16 +198,7 @@ def remove_topic(request, section_name, topic_name):
 
     if username:
         with connection.cursor() as cursor:
-
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
-
-            if user_role in ('admin', 'moderator'):
-
-                moderators = (row[0] for row in
-                              cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
-
-                if user_role == 'admin' or username in moderators:
-                    cursor.callproc('remove_topic', (topic_name, request.user.username))
+            cursor.callproc('remove_topic', (username, topic_name))
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 
@@ -225,7 +208,7 @@ def topics_by_tag(request, tag_name):
 
     with connection.cursor() as cursor:
         if username:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            user_role = cursor.callfunc('user_role', cx_Oracle.STRING, (username,))
         else:
             user_role = 'newbie'
 
@@ -242,26 +225,21 @@ def topic(request, section_name, topic_name):
 
     with connection.cursor() as cursor:
         if username:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            user_role = cursor.callfunc('user_role', cx_Oracle.STRING, (username,))
         else:
             user_role = 'newbie'
 
         section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
         if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,))):
-            exists = cursor.callfunc('topic_exists', cx_Oracle.NUMBER, (topic_name,))
-            if int(exists):
+            if int(cursor.callfunc('topic_exists', cx_Oracle.NUMBER, (topic_name,))):
                 messages = fetch_to_dict(cursor.callfunc('get_messages', cx_Oracle.CURSOR, (topic_name,)))
+                is_moderator = int(cursor.callfunc('is_moderator', cx_Oracle.NUMBER, (username, section_name,)))
 
-                moderators = (row[0] for row in
-                              cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
-
-                is_moderator = user_role == 'admin' or (user_role == 'moderator' and username in moderators)
                 can_add_message = section_role in fetch_to_tuple(
                     cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))) and username
 
-                context = {'SECTION_NAME': section_name, 'TOPIC_NAME': topic_name,
-                           'MESSAGES': messages,
+                context = {'SECTION_NAME': section_name, 'TOPIC_NAME': topic_name, 'MESSAGES': messages,
                            'USER': {'IS_MODERATOR': is_moderator, 'USERNAME': username,
                                     'CAN_ADD_MESSAGE': can_add_message}}
 
@@ -275,12 +253,12 @@ def add_message(request, section_name, topic_name):
 
     if username and request.method == 'POST':
         with connection.cursor() as cursor:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            user_role = cursor.callfunc('user_role', cx_Oracle.STRING, (username,))
 
             section_role = cursor.callfunc('section_role', cx_Oracle.STRING, (section_name,))
 
             if section_role in fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role, 'write'))):
-                cursor.callproc('add_message', (request.POST['text'], request.user.username, topic_name))
+                cursor.callproc('add_message', (username, topic_name, request.POST['text']))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -300,21 +278,7 @@ def remove_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
-
-            cursor.execute('''SELECT username
-                              FROM messages, users
-                              WHERE users.id = messages.user_id
-                              AND messages.id = %s;''', (message_id,))
-            message_creator = cursor.fetchone()[0]
-
-            moderators = (row[0] for row in
-                          cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
-
-            if username == message_creator or user_role == 'admin' or (
-                            user_role == 'moderator' and username in moderators):
-                cursor.execute('''DELETE FROM messages WHERE id = %s''', (message_id,))
-                cursor.callproc("log_add", (request.user.username, 'removed message id:{}'.format(message_id)))
+            cursor.callproc("remove_message", (username, message_id))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))
 
@@ -324,33 +288,16 @@ def edit_message(request, section_name, topic_name, message_id):
 
     if username:
         with connection.cursor() as cursor:
-            nickname, user_role = cursor.callfunc('user_role_nickname', cx_Oracle.CURSOR, (username,)).fetchone()
+            message = fetch_to_dict(cursor.callfunc('get_message', cx_Oracle.CURSOR, (message_id,)))[0]
+            is_moderator = int(cursor.callfunc('is_moderator', cx_Oracle.NUMBER, (username, section_name,)))
 
-            cursor.execute('''SELECT username
-                              FROM messages, users
-                              WHERE users.id = messages.user_id
-                              AND messages.id = %s;''', (message_id,))
-            message_creator = cursor.fetchone()[0]
-
-            moderators = (row[0] for row in
-                          cursor.callfunc('get_section_moderators', cx_Oracle.CURSOR, (section_name,)).fetchall())
-
-            if username == message_creator or user_role == 'admin' or (
-                            user_role == 'moderator' and username in moderators):
+            if username == message['USERNAME'] or is_moderator:
                 if request.method == 'GET':
-                    cursor.execute('''SELECT messages.id, username, nickname, text, messages.create_date, rating
-                                      FROM messages, users
-                                      WHERE users.id = messages.user_id
-                                      AND messages.id = %s;''', (message_id,))
-
-                    message = fetch_to_dict(cursor)[0]
-                    context = {'SECTION_NAME': section_name, 'TOPIC_NAME': topic_name, 'MESSAGE_ID': message_id,
-                               'MESSAGE': message}
+                    context = {'SECTION_NAME': section_name, 'TOPIC_NAME': topic_name,
+                               'MESSAGE_ID': message_id, 'MESSAGE': message}
                     return render(request, 'edit_message.html', context)
+
                 elif request.method == 'POST':
-                    cursor.execute('''UPDATE messages SET text = %s
-                                      WHERE ID = %s;''',
-                                   (request.POST['text'], message_id))
-                    cursor.callproc("log_add", (request.user.username, 'edited message id:{}'.format(message_id)))
+                    cursor.callproc("edit_message", (username, message_id, request.POST['text']))
 
     return HttpResponseRedirect(reverse('topic', args=(section_name, topic_name)))

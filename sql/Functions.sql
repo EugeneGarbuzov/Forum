@@ -164,16 +164,17 @@ IS
 /
 
 
-CREATE OR REPLACE FUNCTION user_role_nickname(username_ VARCHAR2)
-  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+CREATE OR REPLACE FUNCTION user_role(username_ VARCHAR2)
+  RETURN VARCHAR2
+IS
+  role VARCHAR2(30);
   BEGIN
-    OPEN result FOR SELECT
-                      nickname,
-                      name
-                    FROM users, roles
-                    WHERE roles.id = users.role_id AND username = username_;
-    RETURN result;
-  END user_role_nickname;
+    SELECT name
+    INTO role
+    FROM users, roles
+    WHERE roles.id = users.role_id AND username = username_;
+    RETURN role;
+  END user_role;
 /
 
 
@@ -192,19 +193,26 @@ CREATE OR REPLACE FUNCTION get_section_moderators(section_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_section(username_ VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_section(username_ VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role_ VARCHAR2)
 IS
+  role VARCHAR2(30);
   BEGIN
-    INSERT INTO sections (role_id, name, create_date, description)
-      SELECT
-        id,
-        name_,
-        CURRENT_DATE,
-        description_
-      FROM ROLES
-      WHERE NAME = role;
+    role := user_role(username_);
 
-    log_add(username_, 'added section ' || name_);
+    IF role = 'admin'
+    THEN
+
+      INSERT INTO sections (role_id, name, create_date, description)
+        SELECT
+          id,
+          name_,
+          CURRENT_DATE,
+          description_
+        FROM ROLES
+        WHERE NAME = role_;
+      log_add(username_, 'added section ' || name_);
+    END IF;
+
   END add_section;
 /
 
@@ -213,10 +221,7 @@ CREATE OR REPLACE PROCEDURE remove_section(username_ VARCHAR2, name_ VARCHAR2)
 IS
   role VARCHAR2(30);
   BEGIN
-    SELECT name
-    INTO role
-    FROM users, roles
-    WHERE roles.id = users.role_id AND username = username_;
+    role := user_role(username_);
 
     IF role = 'admin'
     THEN
@@ -276,7 +281,7 @@ CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_topic(name_ VARCHAR2, description_ VARCHAR2, section_name VARCHAR2, username_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_topic(username_ VARCHAR2, section_name VARCHAR2, name_ VARCHAR2, description_ VARCHAR2)
 IS
   BEGIN
     INSERT INTO topics (section_id, user_id, name, create_date, description)
@@ -295,12 +300,70 @@ IS
 /
 
 
-CREATE OR REPLACE PROCEDURE remove_topic(topic_name VARCHAR2, username VARCHAR2)
+CREATE OR REPLACE FUNCTION is_moderator(username_ VARCHAR2, section_name VARCHAR2)
+  RETURN NUMBER
 IS
+  role VARCHAR2(30);
   BEGIN
-    DELETE FROM topics
-    WHERE name = topic_name;
-    log_add(username, 'removed topic ' || topic_name);
+    role := user_role(username_);
+
+    IF role = 'admin'
+    THEN
+      RETURN 1;
+    END IF;
+
+    IF role = 'moderator'
+    THEN
+      FOR moderator IN (SELECT username
+                        FROM users, sections, sections_users
+                        WHERE users.id = sections_users.user_id
+                              AND sections_users.section_id = sections.id
+                              AND name = section_name)
+      LOOP
+        IF moderator.username = username_
+        THEN
+          RETURN 1;
+        END IF;
+      END LOOP;
+    END IF;
+
+    RETURN 0;
+  END is_moderator;
+/
+
+
+CREATE OR REPLACE PROCEDURE remove_topic(username_ VARCHAR2, topic_name VARCHAR2)
+IS
+  role VARCHAR2(30);
+  BEGIN
+    role := user_role(username_);
+
+    IF role = 'admin'
+    THEN
+      DELETE FROM topics
+      WHERE name = topic_name;
+      log_add(username_, 'removed topic ' || topic_name);
+      RETURN;
+    END IF;
+
+    IF role = 'moderator'
+    THEN
+      FOR moderator IN (SELECT username
+                        FROM users, sections_users, topics, messages
+                        WHERE users.id = sections_users.user_id
+                              AND sections_users.section_id = topics.section_id
+                              AND topics.name = topic_name)
+      LOOP
+        IF moderator.username = username_
+        THEN
+          DELETE FROM topics
+          WHERE name = topic_name;
+          log_add(username_, 'removed topic ' || topic_name);
+          RETURN;
+        END IF;
+      END LOOP;
+    END IF;
+
   END remove_topic;
 /
 
@@ -319,7 +382,7 @@ IS
 /
 
 
-CREATE OR REPLACE PROCEDURE add_tag(tag_ VARCHAR2, topic_name VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_tag(topic_name VARCHAR2, tag_ VARCHAR2)
 IS
   tag_exists NUMBER := 0;
   BEGIN
@@ -363,7 +426,7 @@ CREATE OR REPLACE FUNCTION get_messages(topic_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_message(text VARCHAR2, username_ VARCHAR2, topic_name VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_message(username_ VARCHAR2, topic_name VARCHAR2, text VARCHAR2)
 IS
   BEGIN
     INSERT INTO messages (create_date, text, rating, user_id, topic_id)
@@ -429,4 +492,114 @@ IS
       WHERE username = username_;
 
   END add_like;
+/
+
+
+CREATE OR REPLACE PROCEDURE remove_message(username_ VARCHAR2, message_id NUMBER)
+IS
+  role            VARCHAR2(30);
+  message_creator VARCHAR2(30);
+  topic_id        NUMBER;
+
+  BEGIN
+    role := user_role(username_);
+
+    SELECT username
+    INTO message_creator
+    FROM messages, users
+    WHERE users.id = messages.user_id AND messages.id = message_id;
+
+    IF username_ = message_creator OR role = 'admin'
+    THEN
+      DELETE FROM messages
+      WHERE id = message_id;
+      log_add(username_, 'removed message id: ' || message_id);
+      RETURN;
+    END IF;
+
+    IF role = 'moderator'
+    THEN
+      FOR moderator IN (SELECT username
+                        FROM users, sections_users, topics, messages
+                        WHERE users.id = sections_users.user_id
+                              AND sections_users.section_id = topics.section_id
+                              AND topics.id = messages.topic_id
+                              AND messages.id = message_id)
+      LOOP
+        IF moderator.username = username_
+        THEN
+          DELETE FROM messages
+          WHERE id = message_id;
+          log_add(username_, 'removed message id: ' || message_id);
+          RETURN;
+        END IF;
+      END LOOP;
+    END IF;
+
+  END remove_message;
+/
+
+
+CREATE OR REPLACE FUNCTION get_message(message_id NUMBER)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT
+                      messages.id,
+                      username,
+                      nickname,
+                      text,
+                      messages.create_date,
+                      rating
+                    FROM messages, users
+                    WHERE users.id = messages.user_id
+                          AND messages.id = message_id;
+    RETURN result;
+  END get_message;
+/
+
+
+CREATE OR REPLACE PROCEDURE edit_message(username_ VARCHAR2, message_id NUMBER, text_ VARCHAR2)
+IS
+  role            VARCHAR2(30);
+  message_creator VARCHAR2(30);
+  topic_id        NUMBER;
+
+  BEGIN
+    role := user_role(username_);
+
+    SELECT username
+    INTO message_creator
+    FROM messages, users
+    WHERE users.id = messages.user_id AND messages.id = message_id;
+
+    IF username_ = message_creator OR role = 'admin'
+    THEN
+      UPDATE messages
+      SET text = text_
+      WHERE id = message_id;
+      log_add(username_, 'edited message id ' || message_id);
+      RETURN;
+    END IF;
+
+    IF role = 'moderator'
+    THEN
+      FOR moderator IN (SELECT username
+                        FROM users, sections_users, topics, messages
+                        WHERE users.id = sections_users.user_id
+                              AND sections_users.section_id = topics.section_id
+                              AND topics.id = messages.topic_id
+                              AND messages.id = message_id)
+      LOOP
+        IF moderator.username = username_
+        THEN
+          UPDATE messages
+          SET text = text_
+          WHERE id = message_id;
+          log_add(username_, 'edited message id ' || message_id);
+          RETURN;
+        END IF;
+      END LOOP;
+    END IF;
+
+  END edit_message;
 /
