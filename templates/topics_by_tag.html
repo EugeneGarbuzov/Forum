@@ -45,7 +45,7 @@
 
         {% if IS_MODERATOR %}
           <br/>
-          <a href="{% url 'remove_topic' SECTION_NAME TOPIC.NAME %}">
+          <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
             Remove
           </a>
         {% endif %}
