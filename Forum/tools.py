@@ -8,15 +8,6 @@ def fetch_to_dict(cursor):
     return [dict(zip([col[0] for col in desc], row)) for row in cursor.fetchall()]
 
 
-def cursor_callfunc(bla, blabla, tuplebla, cursor):
-    # Иди своей дорогой, сталкер
-    return cursor.execute('''SELECT s.name, s.description, s.create_date,
-                          (SELECT name FROM roles WHERE roles.id = s.role_id)  AS role_name
-                          FROM sections s, roles r
-                          WHERE s.role_id = r.id
-                          AND r.name IN {0};'''.format(tuplebla))
-
-
 def fetch_to_tuple(cursor):
     return tuple(row[0] for row in cursor.fetchall())
 

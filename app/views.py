@@ -5,7 +5,7 @@ from django.db import connection
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict, fetch_to_tuple, cursor_callfunc
+from Forum.tools import fetch_to_dict, fetch_to_tuple
 
 
 def login(request):
@@ -92,8 +92,7 @@ def index(request):
         else:
             nickname, user_role = '', 'newbie'
 
-        roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,)))
-        sections = fetch_to_dict(cursor_callfunc('get_allowed_sections', cx_Oracle.CURSOR, roles, cursor))
+        sections = fetch_to_dict(cursor.callfunc('get_allowed_sections', cx_Oracle.CURSOR, (user_role,)))
 
         for section in sections:
             section['MODERATORS'] = fetch_to_dict(

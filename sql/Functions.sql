@@ -624,20 +624,29 @@ CREATE OR REPLACE FUNCTION get_user_info(username_ VARCHAR2, password_ VARCHAR2)
 /
 
 
-CREATE OR REPLACE FUNCTION topics_by_tag(user_role VARCHAR2, tag_name VARCHAR2)
-  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
-    allowed_roles SYS_REFCURSOR := check_roles(user_role);
-    current_role VARCHAR2(30);
-    in_clause    VARCHAR2(200);
+CREATE OR REPLACE FUNCTION get_roles_string(user_role VARCHAR2)
+  RETURN VARCHAR2 AS result VARCHAR2(200);
+  allowed_roles SYS_REFCURSOR := check_roles(user_role);
+  current_role              VARCHAR2(30);
   BEGIN
     LOOP
       FETCH allowed_roles INTO current_role;
       EXIT WHEN allowed_roles%NOTFOUND;
-      IF in_clause IS NOT NULL THEN
-        in_clause := in_clause || ', ';
+      IF result IS NOT NULL
+      THEN
+        result := result || ', ';
       END IF;
-      in_clause := in_clause || '''' || current_role || '''';
+      result := result || '''' || current_role || '''';
     END LOOP;
+    RETURN result;
+  END get_roles_string;
+/
+
+
+CREATE OR REPLACE FUNCTION topics_by_tag(user_role VARCHAR2, tag_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  in_clause VARCHAR2(200) := get_roles_string(user_role);
+  BEGIN
     EXECUTE IMMEDIATE 'BEGIN
                          OPEN :1 FOR SELECT
                                        tp.name,
@@ -658,4 +667,21 @@ CREATE OR REPLACE FUNCTION topics_by_tag(user_role VARCHAR2, tag_name VARCHAR2)
     USING result, tag_name;
     RETURN result;
   END topics_by_tag;
+/
+
+
+CREATE OR REPLACE FUNCTION get_allowed_sections(user_role VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  in_clause VARCHAR2(200) := get_roles_string(user_role);
+  BEGIN
+    EXECUTE IMMEDIATE 'BEGIN
+                         OPEN :1 FOR SELECT s.name, s.description, s.create_date,
+                          (SELECT name FROM roles WHERE roles.id = s.role_id) AS role_name
+                          FROM sections s, roles r
+                          WHERE s.role_id = r.id
+                          AND r.name IN (' || in_clause || ');
+                       END;'
+    USING result;
+    RETURN result;
+  END get_allowed_sections;
 /
