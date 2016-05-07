@@ -5,7 +5,7 @@ from django.db import connection
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from Forum.tools import fetch_to_dict, fetch_to_tuple, cursor_callfunc, cursor_calfunc
+from Forum.tools import fetch_to_dict, fetch_to_tuple, cursor_callfunc
 
 
 def login(request):
@@ -211,8 +211,7 @@ def topics_by_tag(request, tag_name):
         else:
             user_role = 'newbie'
 
-        allowed_roles = fetch_to_tuple(cursor.callfunc('check_roles', cx_Oracle.CURSOR, (user_role,)))
-        topics = fetch_to_dict(cursor_calfunc('topics_by_tag', cx_Oracle.CURSOR, (allowed_roles, tag_name), cursor))
+        topics = fetch_to_dict(cursor.callfunc('topics_by_tag', cx_Oracle.CURSOR, (user_role, tag_name)))
 
     context = {'TAG_NAME': tag_name, 'TOPICS': topics}
 

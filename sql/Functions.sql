@@ -174,6 +174,9 @@ IS
     FROM users, roles
     WHERE roles.id = users.role_id AND username = username_;
     RETURN role;
+    EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+    RETURN 'newbie';
   END user_role;
 /
 
@@ -395,7 +398,7 @@ IS
         INTO tag_exists
         FROM dual
         WHERE tag.tag_name IN (SELECT name
-                       FROM tags);
+                               FROM tags);
         EXCEPTION
         WHEN NO_DATA_FOUND THEN
         INSERT INTO tags (name) VALUES (tag.tag_name);
@@ -607,4 +610,52 @@ IS
     END IF;
 
   END edit_message;
+/
+
+
+CREATE OR REPLACE FUNCTION get_user_info(username_ VARCHAR2, password_ VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+  BEGIN
+    OPEN result FOR SELECT *
+                    FROM users
+                    WHERE username = username_ AND password = password_;
+    RETURN result;
+  END get_user_info;
+/
+
+
+CREATE OR REPLACE FUNCTION topics_by_tag(user_role VARCHAR2, tag_name VARCHAR2)
+  RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
+    allowed_roles SYS_REFCURSOR := check_roles(user_role);
+    current_role VARCHAR2(30);
+    in_clause    VARCHAR2(200);
+  BEGIN
+    LOOP
+      FETCH allowed_roles INTO current_role;
+      EXIT WHEN allowed_roles%NOTFOUND;
+      IF in_clause IS NOT NULL THEN
+        in_clause := in_clause || ', ';
+      END IF;
+      in_clause := in_clause || '''' || current_role || '''';
+    END LOOP;
+    EXECUTE IMMEDIATE 'BEGIN
+                         OPEN :1 FOR SELECT
+                                       tp.name,
+                                       tp.description,
+                                       tp.create_date,
+                                       u.nickname,
+                                       u.username,
+                                       s.name AS section_name
+                                     FROM tags tg, tags_topics tt, topics tp, sections s, ROLES r, USERS u
+                                     WHERE u.id = tp.user_id
+                                           AND s.role_id = r.id
+                                           AND r.name IN (' || in_clause || ')
+                                           AND s.id = tp.section_id
+                                           AND tp.id = tt.topic_id
+                                           AND tt.tag_id = tg.id
+                                           AND tg.name = :2;
+                       END;'
+    USING result, tag_name;
+    RETURN result;
+  END topics_by_tag;
 /
