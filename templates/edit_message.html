@@ -1,60 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Edit message</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  <form method="post" action="{% url 'edit_message' SECTION_NAME TOPIC_NAME MESSAGE_ID %}">
-    {% csrf_token %}
-    <table>
-      <tr>
-        <td>
-          Date:
-        </td>
-        <td>
-          {{ MESSAGE.CREATE_DATE }}
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Author:
-        </td>
-        <td>
-          <a href="{% url 'profile' MESSAGE.USERNAME %}">
-            {{ MESSAGE.NICKNAME }}
-          </a>
-        </td>
-      </tr>
-      <tr>
-      <tr>
-        <td>
-          Likes:
-        </td>
-        <td>
-          {{ MESSAGE.RATING }}
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="text">Message: </label>
-        </td>
-        <td>
-          <textarea id="text" name="text">{{ MESSAGE.TEXT }}</textarea>
-        </td>
-      </tr>
-      <tr>
-        <td>
-        </td>
-        <td>
-          <input type="submit" value="Edit message"/>
-        </td>
-      </tr>
-    </table>
-  </form>
-</div>
+{% block title %}Edit message{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<form class="form-horizontal" method="post" action="{% url 'edit_message' SECTION_NAME TOPIC_NAME MESSAGE_ID %}">
+  {% csrf_token %}
+  <div class="form-group">
+    <label class="col-md-4 control-label">Date</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ MESSAGE.CREATE_DATE }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Author</label>
+    <div class="col-md-8">
+      <p class="form-control-static">
+        <a href="{% url 'profile' MESSAGE.USERNAME %}">{{ MESSAGE.NICKNAME }}</a>
+      </p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Likes:</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ MESSAGE.RATING }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="text">Message</label>
+    <div class="col-md-8">
+        <textarea class="form-control" id="text" name="text" placeholder="Message">{{ MESSAGE.TEXT }}</textarea>
+    </div>
+  </div>
+  <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Edit message"/>
+</form>
+{% endblock %}

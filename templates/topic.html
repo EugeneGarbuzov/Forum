@@ -1,102 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Section {{ SECTION_NAME }}, topic {{ TOPIC_NAME }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  <table>
-    <tr>
-      <td>
-        <a href="{% url 'section' SECTION_NAME %}">
-          Back to topics list
-        </a>
-      </td>
-    </tr>
-  </table>
+{% block title %}Section {{ SECTION_NAME }}, topic {{ TOPIC_NAME }}{% endblock %}
 
-  <table>
-    <tr>
-      <td>
-        Section:
-      </td>
-      <td>
-        {{ SECTION_NAME }}
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Topic:
-      </td>
-      <td>
-        {{ TOPIC_NAME }}
-      </td>
-    </tr>
-  </table>
+{% block content %}
+<a href="{% url 'section' SECTION_NAME %}">
+  Back to topics list
+</a>
 
-  <ul>
-    {% for MESSAGE in MESSAGES %}
-      <li>
-        <h3>
-          {{ MESSAGE.TEXT }}
-        </h3>
+<h2 class="text-center">
+  Section {{ SECTION_NAME }}
+</h2>
+<h1 class="text-center">
+  Topic {{ TOPIC_NAME }}
+</h1>
 
-        Date: {{ MESSAGE.CREATE_DATE }}
-        <br/>
+<ul>
+  {% for MESSAGE in MESSAGES %}
+    <li>
+      <h3>
+        {{ MESSAGE.TEXT }}
+      </h3>
 
-        Author:
-        <a href="{% url 'profile' MESSAGE.USERNAME %}">
-          {{ MESSAGE.NICKNAME }}
-        </a>
-        <br/>
+      Date: {{ MESSAGE.CREATE_DATE }}
+      <br/>
 
-        <a href="{% url 'like_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
-          Like: {{ MESSAGE.RATING }}
+      Author:
+      <a href="{% url 'profile' MESSAGE.USERNAME %}">
+        {{ MESSAGE.NICKNAME }}
+      </a>
+      <br/>
+
+      <a href="{% url 'like_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
+        Like: {{ MESSAGE.RATING }}
+      </a>
+
+      <br/>
+
+      {% if USER.IS_MODERATOR or USER.USERNAME == MESSAGE.USERNAME %}
+        <a href="{% url 'remove_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
+          Remove
         </a>
 
         <br/>
+        <a href="{% url 'edit_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
+          Edit
+        </a>
+      {% endif %}
 
-        {% if USER.IS_MODERATOR or USER.USERNAME == MESSAGE.USERNAME %}
-          <a href="{% url 'remove_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
-            Remove
-          </a>
+    </li>
+  {% endfor %}
+</ul>
 
-          <br/>
-          <a href="{% url 'edit_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
-            Edit
-          </a>
-        {% endif %}
-
-      </li>
-    {% endfor %}
-  </ul>
-
-  {% if USER.CAN_ADD_MESSAGE %}
-    <form method="post" action="{% url 'add_message' SECTION_NAME TOPIC_NAME %}">
-      {% csrf_token %}
-      <table>
-        <tr>
-          <td>
-            <label for="text">Message: </label>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <textarea id="text" name="text"></textarea>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <input type="submit" value="Add message"/>
-          </td>
-        </tr>
-      </table>
-    </form>
-  {% endif %}
-</div>
-
-
-</body>
-</html>
+{% if USER.CAN_ADD_MESSAGE %}
+  <form class="form-horizontal" method="post" action="{% url 'add_message' SECTION_NAME TOPIC_NAME %}">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="col-md-3 control-label" for="text">Message</label>
+      <div class="col-md-9">
+          <textarea class="form-control" id="text" name="text" placeholder="Message"></textarea>
+      </div>
+    </div>
+    <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Add message"/>
+  </form>
+{% endif %}
+{% endblock %}

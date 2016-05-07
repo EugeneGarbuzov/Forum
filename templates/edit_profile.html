@@ -1,80 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Edit profile</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  {% if ERROR %}
-    <p>
-      Error.
-    </p>
-  {% endif %}
+{% block title %}Edit profile{% endblock %}
 
-  <form method="post" action="{% url 'edit_profile' %}">
-    {% csrf_token %}
-    <table>
-      <tr>
-        <td>
-          <label for="password">Password:</label>
-        </td>
-        <td>
-          <input id="password" type="password" name="password" value="{{ PASSWORD }}"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="email">Email:</label>
-        </td>
-        <td>
-          <input id="email" type="email" name="email" value="{{ EMAIL }}"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="nickname">Nickname:</label>
-        </td>
-        <td>
-          <input id="nickname" type="text" name="nickname" value="{{ NICKNAME }}"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="full_name">Full name:</label>
-        </td>
-        <td>
-          <input id="full_name" type="text" name="full_name" value="{{ FULL_NAME }}"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="status">Status:</label>
-        </td>
-        <td>
-          <input id="status" type="text" name="status" value="{{ STATUS }}"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="signature">Signature:</label>
-        </td>
-        <td>
-          <input id="signature" type="text" name="signature" value="{{ SIGNATURE }}"/>
-        </td>
-      </tr>
+{% block content %}
+{% if ERROR %}
+  <div class="alert alert-danger text-center">
+    Error.
+  </div>
+{% endif %}
 
-      <tr>
-        <td>
-        </td>
-        <td>
-          <input type="submit" value="Update profile"/>
-        </td>
-      </tr>
-    </table>
-  </form>
-</div>
-
-</body>
-</html>
+<form method="post" action="{% url 'edit_profile' %}" class="form-horizontal">
+  {% csrf_token %}
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="nickname">Nickname</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="nickname" id="nickname" placeholder="Nickname"
+             value="{{ NICKNAME }}">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="full_name">Full name</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="full_name" id="full_name" placeholder="Full name"
+             value="{{ FULL_NAME }}">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="status">Status</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="status" id="status" placeholder="Status"
+             value="{{ STATUS }}">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="signature">Signature</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="signature" id="signature" placeholder="Signature"
+             value="{{ SIGNATURE }}">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="password">Password</label>
+    <div class="col-md-6">
+      <input type="password" class="form-control" name="password" id="password" placeholder="Password"
+             value="{{ PASSWORD }}">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="email">Email</label>
+    <div class="col-md-6">
+      <input type="email" class="form-control" name="email" id="email" placeholder="Email"
+             value="{{ EMAIL }}">
+    </div>
+  </div>
+  <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Update profile"/>
+</form>
+{% endblock %}

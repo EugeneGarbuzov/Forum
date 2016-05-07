@@ -1,89 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Section {{ SECTION_NAME }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  <table>
-    <tr>
-      <td>
-        <a href="{% url 'index' %}">
-          Back to sections list
+{% block title %}Section {{ SECTION_NAME }}{% endblock %}
+
+{% block content %}
+<table>
+  <tr>
+    <td>
+      <a href="{% url 'index' %}">
+        Back to sections list
+      </a>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <h1 class="text-center">
+      Section {{ SECTION_NAME }}
+    </h1>
+  </tr>
+</table>
+
+<ul>
+  {% for TOPIC in TOPICS %}
+    <li>
+      <h3>
+        <a href="{% url 'topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+          {{ TOPIC.NAME }}
         </a>
-      </td>
-    </tr>
-  </table>
+      </h3>
+      Created: {{ TOPIC.CREATE_DATE }}
+      <br/>
 
-  <table>
-    <tr>
-      <td>
-        Section:
-      </td>
-      <td>
-        {{ SECTION_NAME }}
-      </td>
-    </tr>
-  </table>
-
-  <ul>
-    {% for TOPIC in TOPICS %}
-      <li>
-        <h3>
-          <a href="{% url 'topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
-            {{ TOPIC.NAME }}
-          </a>
-        </h3>
-        Created: {{ TOPIC.CREATE_DATE }}
-        <br/>
-
-        Author:
-        <a href="{% url 'profile' TOPIC.USERNAME %}">
-          {{ TOPIC.NICKNAME }}
-        </a>
-        <br/>
+      Author:
+      <a href="{% url 'profile' TOPIC.USERNAME %}">
+        {{ TOPIC.NICKNAME }}
+      </a>
+      <br/>
 
 
-        <table>
-          <tr>
+      <table>
+        <tr>
+          <td>
+            Tags:&nbsp;
+          </td>
+          {% for TAG in TOPIC.TAGS %}
             <td>
-              Tags:
+              <a href="{% url 'topics_by_tag' TAG %}">{{ TAG }}</a>&nbsp;
             </td>
-            {% for TAG in TOPIC.TAGS %}
-              <td>
-                <a href="{% url 'topics_by_tag' TAG %}">
-                  {{ TAG }}
-                </a>
-              </td>
-            {% endfor %}
-          </tr>
-        </table>
+          {% endfor %}
+        </tr>
+      </table>
 
-        {% if IS_MODERATOR %}
+      {% if IS_MODERATOR %}
 
-          <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
-            Remove
-          </a>
-        {% endif %}
+        <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+          Remove
+        </a>
+      {% endif %}
 
-      </li>
-    {% endfor %}
-  </ul>
+    </li>
+  {% endfor %}
+</ul>
 
-  {% if CAN_CREATE_TOPIC %}
-    <table>
-      <tr>
-        <td>
-          <a href="{% url 'add_topic' SECTION_NAME %}">
-            Add Topic
-          </a>
-        </td>
-      </tr>
-    </table>
-  {% endif %}
-</div>
-
-</body>
-</html>
+{% if CAN_CREATE_TOPIC %}
+  <a class="btn btn-success col-md-4 col-md-offset-4" href="{% url 'add_topic' SECTION_NAME %}">
+    Add Topic
+  </a>
+{% endif %}
+{% endblock %}

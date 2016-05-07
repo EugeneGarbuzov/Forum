@@ -1,120 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Profile</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  <table>
-    <tr>
-      <td>
-        Nickname:
-      </td>
-      <td>
-        {{ USER_INFO.NICKNAME }}
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Full name:
-      </td>
-      <td>
-        {{ USER_INFO.FULL_NAME }}
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Status:
-      </td>
-      <td>
-        {{ USER_INFO.STATUS }}
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Signature:
-      </td>
-      <td>
-        {{ USER_INFO.SIGNATURE }}
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Role:
-      </td>
-      <td>
-        {{ USER_INFO.ROLE_NAME }}
-      </td>
-    </tr>
+{% block title %}Profile{% endblock %}
 
-    <tr>
-      <td>
-        Rank:
-      </td>
-      <td>
-        {{ USER_INFO.RANK_NAME }} ({{ USER_INFO.BONUS_RATING }})
-      </td>
-    </tr>
+{% block content %}
+<form class="form-horizontal">
+  <div class="form-group">
+    <label class="col-md-4 control-label">Nickname</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ USER_INFO.NICKNAME }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Full name</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ USER_INFO.FULL_NAME }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Status</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ USER_INFO.STATUS }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Signature</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ USER_INFO.SIGNATURE }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Role</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ USER_INFO.ROLE_NAME }}</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label">Rank</label>
+    <div class="col-md-8">
+      <p class="form-control-static">{{ USER_INFO.RANK_NAME }} ({{ USER_INFO.BONUS_RATING }})</p>
+    </div>
+  </div>
 
-    {% if MODERATED_SECTIONS %}
-      <tr>
-        <td>
-          Moderated sections:
-        </td>
-        <td>
-          <table>
-            {% for SECTION in MODERATED_SECTIONS %}
-              <tr>
-                <td>
-                  <a href="{% url 'section' SECTION %}">
-                    {{ SECTION }}
-                  </a>
-                </td>
-              </tr>
-            {% endfor %}
-          </table>
-        </td>
-      </tr>
-    {% endif %}
+  {% if MODERATED_SECTIONS %}
+    <div class="form-group">
+      <label class="col-md-4 control-label">Moderated sections</label>
+      {% for SECTION in MODERATED_SECTIONS %}
+        <div class="col-md-8">
+          <p><a href="{% url 'section' SECTION %}">{{ SECTION }}</a></p>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-    {% if TROPHIES %}
-      <tr>
-        <td>
-          Trophies:
-        </td>
-        <td>
+  {% if TROPHIES %}
+    <div class="form-group">
+      <label class="col-md-4 control-label">Trophies</label>
+      {% for TROPHY in TROPHIES %}
+        <div class="col-md-8">
+          <p>{{ TROPHY.NAME }}</p>
+          <span class="help-block">{{ TROPHY.DESCRIPTION }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-          <table>
-            {% for TROPHY in TROPHIES %}
-              <tr>
-                <td>
-                  {{ TROPHY.TROPHY_NAME }}:
-                </td>
-                <td>
-                  {{ TROPHY.DESCRIPTION }}
-                </td>
-              </tr>
-            {% endfor %}
-          </table>
-
-        </td>
-      </tr>
-    {% endif %}
-
-    {% if user.get_username == USER_INFO.USERNAME %}
-      <tr>
-        <td>
-          <a href="{% url 'edit_profile' %}">
-            Edit
-          </a>
-        </td>
-      </tr>
-    {% endif %}
-
-  </table>
-</div>
-
-</body>
-</html>
+  {% if user.get_username == USER_INFO.USERNAME %}
+    <a class="btn btn-default col-lg-2 col-md-offset-5" href="{% url 'edit_profile' %}">
+      Edit
+    </a>
+  {% endif %}
+</form>
+{% endblock %}

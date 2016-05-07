@@ -1,59 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Tag</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  <table>
-    <tr>
-      <td>
-        Tag:
-      </td>
-      <td>
-        {{ TAG_NAME }}
-      </td>
-    </tr>
-    <tr>
-      <td>
-        References:
-      </td>
-      <td>
-        {{ TOPICS|length }}
-      </td>
-    </tr>
-  </table>
+{% block title %}Tag{% endblock %}
 
-  <ul>
-    {% for TOPIC in TOPICS %}
-      <li>
-        <h3>
-          <a href="{% url 'topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
-            {{ TOPIC.NAME }}
-          </a>
-        </h3>
-        Created: {{ TOPIC.CREATE_DATE }}
-        <br/>
-
-        Author:
-        <a href="{% url 'profile' TOPIC.USERNAME %}">
-          {{ TOPIC.NICKNAME }}
-        </a>
-        <br/>
-
-        {% if IS_MODERATOR %}
-          <br/>
-          <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
-            Remove
-          </a>
-        {% endif %}
-
-      </li>
-    {% endfor %}
-  </ul>
+{% block content %}
+<h1 class="text-center">
+  Tag {{ TAG_NAME }}
+</h1>
+<div class="text-center">
+  References: {{ TOPICS|length }}
 </div>
 
-</body>
-</html>
+<ul>
+  {% for TOPIC in TOPICS %}
+    <li>
+      <h3>
+        <a href="{% url 'topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+          {{ TOPIC.NAME }}
+        </a>
+      </h3>
+      Created: {{ TOPIC.CREATE_DATE }}
+      <br/>
+
+      Author:
+      <a href="{% url 'profile' TOPIC.USERNAME %}">
+        {{ TOPIC.NICKNAME }}
+      </a>
+      <br/>
+
+      {% if IS_MODERATOR %}
+        <br/>
+        <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
+          Remove
+        </a>
+      {% endif %}
+
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

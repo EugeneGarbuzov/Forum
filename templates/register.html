@@ -1,88 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Register</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  {% if ERROR %}
-    <p>
-      Error.
-    </p>
-  {% endif %}
+{% block title %}Register{% endblock %}
 
-  <form method="post" action="{% url 'register' %}">
-    {% csrf_token %}
-    <table>
-      <tr>
-        <td>
-          <label for="username">Username:</label>
-        </td>
-        <td>
-          <input id="username" type="text" name="username"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="password">Password:</label>
-        </td>
-        <td>
-          <input id="password" type="password" name="password"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="email">Email:</label>
-        </td>
-        <td>
-          <input id="email" type="email" name="email"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="nickname">Nickname:</label>
-        </td>
-        <td>
-          <input id="nickname" type="text" name="nickname"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="full_name">Full name:</label>
-        </td>
-        <td>
-          <input id="full_name" type="text" name="full_name"/>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="status">Status:</label>
-        </td>
-        <td>
-          <textarea id="status" name="status"></textarea>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="signature">Signature:</label>
-        </td>
-        <td>
-          <textarea id="signature" name="signature"></textarea>
-        </td>
-      </tr>
+{% block content %}
+{% if ERROR %}
+  <div class="alert alert-danger text-center">
+    Error.
+  </div>
+{% endif %}
 
-      <tr>
-        <td>
-        </td>
-        <td>
-          <input type="submit" value="Register"/>
-        </td>
-      </tr>
-    </table>
-  </form>
-</div>
-
-</body>
-</html>
+<form class="form-horizontal" method="post" action="{% url 'register' %}">
+  {% csrf_token %}
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="username">Username</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="username" id="username" placeholder="Username">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="password">Password</label>
+    <div class="col-md-6">
+      <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="email">Email</label>
+    <div class="col-md-6">
+      <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="nickname">Nickname</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="nickname" id="nickname" placeholder="Nickname">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="full_name">Full name</label>
+    <div class="col-md-6">
+      <input type="text" class="form-control" name="full_name" id="full_name" placeholder="Full name">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="status">Status</label>
+    <div class="col-md-6">
+        <textarea class="form-control" id="status" name="status" placeholder="Status"></textarea>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-md-4 control-label" for="signature">Signature</label>
+    <div class="col-md-6">
+        <textarea class="form-control" id="signature" name="signature" placeholder="Signature"></textarea>
+    </div>
+  </div>
+  <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Register"/>
+</form>
+{% endblock %}

@@ -1,88 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Forum sections</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div>
-  <table>
-    {% if USER.USERNAME %}
-      <tr>
-        <td>
-          <a href="{% url 'profile' USER.USERNAME %}">
-            {{ USER.NICKNAME }}
-          </a>
-        </td>
-        <td>
-          <a href="{% url 'logout' %}">
-            sign out
-          </a>
-        </td>
-      </tr>
-    {% else %}
-      <tr>
-        <td>
-          <a href="{% url 'login' %}">
-            Login
-          </a>
-        </td>
-        <td>
-          <a href="{% url 'register' %}">
-            Register
-          </a>
-        </td>
-      </tr>
-    {% endif %}
-  </table>
+{% block title %}Forum sections{% endblock %}
 
-  <ul>
-    {% for SECTION in SECTIONS %}
-      <li>
-        <h3>
-          <a href="{% url 'section' SECTION.NAME %}">
-            {{ SECTION.NAME }}
-          </a>
-        </h3>
-      </li>
-      Created: {{ SECTION.CREATE_DATE }}
-      <br/>
-
-      Moderators:
-      {% for MODERATOR in SECTION.MODERATORS %}
-        <a href="{% url 'profile' MODERATOR.USERNAME %}">
-          {{ MODERATOR.NICKNAME }}
+{% block content %}
+<table class="col-md-2 col-md-offset-8">
+  {% if USER.USERNAME %}
+    <tr>
+      <td>
+        <a class="btn btn-primary" href="{% url 'profile' USER.USERNAME %}">
+          {{ USER.NICKNAME }}
         </a>
-      {% endfor %}
-      <br/>
-
-      Category: {{ SECTION.ROLE_NAME }}
-      <br/>
-
-      description: {{ SECTION.DESCRIPTION }}
-      <br/>
-      {% if USER.IS_ADMIN %}
-
-        <a href="{% url 'remove_section' SECTION.NAME %}">
-          Remove section
+      </td>
+      <td>
+        <a class="btn btn-default" href="{% url 'logout' %}">
+          sign out
         </a>
-      {% endif %}
-    {% endfor %}
-  </ul>
-
-  {% if USER.IS_ADMIN %}
-    <table>
-      <tr>
-        <td>
-          <a href="{% url 'add_section' %}">
-            Add Section
-          </a>
-        </td>
-      </tr>
-    </table>
+      </td>
+    </tr>
+  {% else %}
+    <tr>
+      <td>
+        <a class="btn btn-success" href="{% url 'login' %}">
+          Login
+        </a>
+      </td>
+      <td>
+        <a class="btn btn-default" href="{% url 'register' %}">
+          Register
+        </a>
+      </td>
+    </tr>
   {% endif %}
-</div>
+</table>
 
-</body>
-</html>
+<ul>
+  {% for SECTION in SECTIONS %}
+    <li>
+      <h3>
+        <a href="{% url 'section' SECTION.NAME %}">
+          {{ SECTION.NAME }}
+        </a>
+      </h3>
+    </li>
+    Created: {{ SECTION.CREATE_DATE }}
+    <br/>
+
+    Moderators:
+    {% for MODERATOR in SECTION.MODERATORS %}
+      <a href="{% url 'profile' MODERATOR.USERNAME %}">
+        {{ MODERATOR.NICKNAME }}
+      </a>
+    {% endfor %}
+    <br/>
+
+    Category: {{ SECTION.ROLE_NAME }}
+    <br/>
+
+    description: {{ SECTION.DESCRIPTION }}
+    <br/>
+    {% if USER.IS_ADMIN %}
+
+      <a href="{% url 'remove_section' SECTION.NAME %}">
+        Remove section
+      </a>
+    {% endif %}
+  {% endfor %}
+</ul>
+
+{% if USER.IS_ADMIN %}
+  <a class="btn btn-success btn-lg col-md-4 col-md-offset-4" href="{% url 'add_section' %}">
+      Add Section
+  </a>
+{% endif %}
+{% endblock %}
