@@ -8,10 +8,6 @@ def fetch_to_dict(cursor):
     return [dict(zip([col[0] for col in desc], row)) for row in cursor.fetchall()]
 
 
-def fetch_to_tuple(cursor):
-    return tuple(row[0] for row in cursor.fetchall())
-
-
 class ForumAuthenticationBackend:
     def authenticate(self, username=None, password=None):
 
