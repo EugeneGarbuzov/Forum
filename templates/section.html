@@ -61,7 +61,7 @@
           </tr>
         </table>
 
-        {% if IS_MODERATOR %}
+        {% if USER.IS_MODERATOR %}
 
           <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
             Remove
@@ -72,7 +72,7 @@
     {% endfor %}
   </ul>
 
-  {% if CAN_CREATE_TOPIC %}
+  {% if USER.CAN_CREATE_TOPIC %}
     <table>
       <tr>
         <td>
