@@ -36,17 +36,17 @@ IS
 /
 
 
-CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAULT 'read')
+CREATE OR REPLACE FUNCTION check_roles(role_name VARCHAR2, access_mode VARCHAR2 DEFAULT 'read')
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
   BEGIN
-    IF role = 'admin'
+    IF role_name = 'admin'
     THEN
       OPEN result FOR SELECT name
                       FROM roles;
       RETURN result;
     END IF;
 
-    IF role = 'moderator'
+    IF role_name = 'moderator'
     THEN
       OPEN result FOR SELECT name
                       FROM roles
@@ -54,7 +54,7 @@ CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAU
       RETURN result;
     END IF;
 
-    IF role = 'regular'
+    IF role_name = 'regular'
     THEN
       OPEN result FOR SELECT name
                       FROM roles
@@ -62,7 +62,7 @@ CREATE OR REPLACE FUNCTION check_roles(role VARCHAR2, access_mode VARCHAR2 DEFAU
       RETURN result;
     END IF;
 
-    IF role = 'newbie'
+    IF role_name = 'newbie'
     THEN
       IF access_mode = 'read'
       THEN
@@ -164,7 +164,7 @@ IS
 /
 
 
-CREATE OR REPLACE FUNCTION user_role(username_ VARCHAR2)
+CREATE OR REPLACE FUNCTION get_user_role(username_ VARCHAR2)
   RETURN VARCHAR2
 IS
   role VARCHAR2(30);
@@ -177,7 +177,7 @@ IS
     EXCEPTION
     WHEN NO_DATA_FOUND THEN
     RETURN 'newbie';
-  END user_role;
+  END get_user_role;
 /
 
 
@@ -196,59 +196,37 @@ CREATE OR REPLACE FUNCTION get_section_moderators(section_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_section(username_ VARCHAR2, name_ VARCHAR2, description_ VARCHAR2, role_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_section(username            VARCHAR2, section_name VARCHAR2,
+                                        section_description VARCHAR2, section_role VARCHAR2)
 IS
-  role VARCHAR2(30);
   BEGIN
-    role := user_role(username_);
-
-    IF role = 'admin'
+    IF get_user_role(username) = 'admin'
     THEN
-
       INSERT INTO sections (role_id, name, create_date, description)
         SELECT
           id,
-          name_,
+          section_name,
           CURRENT_DATE,
-          description_
+          section_description
         FROM ROLES
-        WHERE NAME = role_;
-      log_add(username_, 'added section ' || name_);
+        WHERE NAME = section_role;
+      log_add(username, 'added section ' || section_name);
     END IF;
 
   END add_section;
 /
 
 
-CREATE OR REPLACE PROCEDURE remove_section(username_ VARCHAR2, name_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE remove_section(username VARCHAR2, section_name VARCHAR2)
 IS
-  role VARCHAR2(30);
   BEGIN
-    role := user_role(username_);
-
-    IF role = 'admin'
+    IF get_user_role(username) = 'admin'
     THEN
       DELETE FROM sections
-      WHERE name = name_;
-      log_add(username_, 'removed section' || name_);
+      WHERE name = section_name;
+      log_add(username, 'removed section' || section_name);
     END IF;
-
   END remove_section;
-/
-
-
-CREATE OR REPLACE FUNCTION section_role(section_name VARCHAR2)
-  RETURN VARCHAR2
-IS
-  role VARCHAR2(30);
-  BEGIN
-    SELECT roles.name
-    INTO role
-    FROM sections, roles
-    WHERE roles.id = sections.role_id
-          AND sections.name = section_name;
-    RETURN role;
-  END section_role;
 /
 
 
@@ -284,38 +262,40 @@ CREATE OR REPLACE FUNCTION get_topic_tags(topic_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_topic(username_ VARCHAR2, section_name VARCHAR2, name_ VARCHAR2, description_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_topic(username_  VARCHAR2, section_name VARCHAR2,
+                                      topic_name VARCHAR2, topic_description VARCHAR2)
 IS
   BEGIN
-    INSERT INTO topics (section_id, user_id, name, create_date, description)
-      SELECT
-        sections.id,
-        users.id,
-        name_,
-        CURRENT_DATE,
-        description_
-      FROM sections, users
-      WHERE NAME = section_name
-            AND username = username_;
+    IF check_access_to_section(username_, section_name, 'write') = 1
+    THEN
+      INSERT INTO topics (section_id, user_id, name, create_date, description)
+        SELECT
+          sections.id,
+          users.id,
+          topic_name,
+          CURRENT_DATE,
+          topic_description
+        FROM sections, users
+        WHERE NAME = section_name
+              AND username = username_;
 
-    log_add(username_, 'added topic ' || name_);
+      log_add(username_, 'added topic ' || topic_name);
+    END IF;
   END add_topic;
 /
 
 
-CREATE OR REPLACE FUNCTION is_moderator(username_ VARCHAR2, section_name VARCHAR2)
+CREATE OR REPLACE FUNCTION is_section_moderator(username_ VARCHAR2, section_name VARCHAR2)
   RETURN NUMBER
 IS
-  role VARCHAR2(30);
+  user_role VARCHAR2(30) := get_user_role(username_);
   BEGIN
-    role := user_role(username_);
-
-    IF role = 'admin'
+    IF user_role = 'admin'
     THEN
       RETURN 1;
     END IF;
 
-    IF role = 'moderator'
+    IF user_role = 'moderator'
     THEN
       FOR moderator IN (SELECT username
                         FROM users, sections, sections_users
@@ -331,67 +311,38 @@ IS
     END IF;
 
     RETURN 0;
-  END is_moderator;
+  END is_section_moderator;
 /
 
 
 CREATE OR REPLACE PROCEDURE remove_topic(username_ VARCHAR2, topic_name VARCHAR2)
 IS
-  role VARCHAR2(30);
+  section_name VARCHAR2(30);
   BEGIN
-    role := user_role(username_);
+    SELECT sections.name
+    INTO section_name
+    FROM sections, topics
+    WHERE sections.id = topics.section_id
+          AND topics.name = topic_name;
 
-    IF role = 'admin'
+    IF is_section_moderator(username_, section_name) = 1
     THEN
       DELETE FROM topics
       WHERE name = topic_name;
       log_add(username_, 'removed topic ' || topic_name);
       RETURN;
     END IF;
-
-    IF role = 'moderator'
-    THEN
-      FOR moderator IN (SELECT username
-                        FROM users, sections_users, topics, messages
-                        WHERE users.id = sections_users.user_id
-                              AND sections_users.section_id = topics.section_id
-                              AND topics.name = topic_name)
-      LOOP
-        IF moderator.username = username_
-        THEN
-          DELETE FROM topics
-          WHERE name = topic_name;
-          log_add(username_, 'removed topic ' || topic_name);
-          RETURN;
-        END IF;
-      END LOOP;
-    END IF;
-
   END remove_topic;
 /
 
 
-CREATE OR REPLACE FUNCTION topic_exists(topic_name VARCHAR2)
-  RETURN NUMBER
-IS
-  result NUMBER;
-  BEGIN
-    SELECT COUNT(*)
-    INTO result
-    FROM topics
-    WHERE topics.name = topic_name;
-    RETURN result;
-  END topic_exists;
-/
-
-
-CREATE OR REPLACE PROCEDURE add_tags(topic_name VARCHAR2, tags_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_tags(topic_name VARCHAR2, topic_tags VARCHAR2)
 IS
   tag_exists NUMBER := 0;
   BEGIN
-    FOR tag IN ( SELECT regexp_substr(tags_, '\S+', 1, LEVEL) tag_name
+    FOR tag IN ( SELECT regexp_substr(topic_tags, '\S+', 1, LEVEL) tag_name
                  FROM dual
-                 CONNECT BY regexp_substr(tags_, '\S+', 1, LEVEL) IS NOT NULL)
+                 CONNECT BY regexp_substr(topic_tags, '\S+', 1, LEVEL) IS NOT NULL)
     LOOP
       BEGIN
         SELECT 1
@@ -434,21 +385,31 @@ CREATE OR REPLACE FUNCTION get_messages(topic_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE PROCEDURE add_message(username_ VARCHAR2, topic_name VARCHAR2, text VARCHAR2)
+CREATE OR REPLACE PROCEDURE add_message(username_ VARCHAR2, topic_name VARCHAR2, topic_text VARCHAR2)
 IS
+  section VARCHAR2(30);
   BEGIN
-    INSERT INTO messages (create_date, text, rating, user_id, topic_id)
-      SELECT
-        CURRENT_DATE,
-        text,
-        0,
-        users.id,
-        topics.id
-      FROM users, topics
-      WHERE username = username_
-            AND name = topic_name;
+    SELECT sections.name
+    INTO section
+    FROM sections, topics
+    WHERE sections.id = topics.section_id
+          AND topics.name = topic_name;
 
-    log_add(username_, 'added a message');
+    IF check_access_to_section(username_, section, 'write') = 1
+    THEN
+      INSERT INTO messages (create_date, text, rating, user_id, topic_id)
+        SELECT
+          CURRENT_DATE,
+          topic_text,
+          0,
+          users.id,
+          topics.id
+        FROM users, topics
+        WHERE username = username_
+              AND name = topic_name;
+
+      log_add(username_, 'added a message');
+    END IF;
   END add_message;
 /
 
@@ -505,45 +466,28 @@ IS
 
 CREATE OR REPLACE PROCEDURE remove_message(username_ VARCHAR2, message_id NUMBER)
 IS
-  role            VARCHAR2(30);
   message_creator VARCHAR2(30);
-  topic_id        NUMBER;
-
+  section_name    VARCHAR2(30);
   BEGIN
-    role := user_role(username_);
+    SELECT sections.name
+    INTO section_name
+    FROM sections, topics, messages
+    WHERE sections.id = topics.section_id
+          AND topics.id = messages.topic_id
+          AND messages.id = message_id;
 
     SELECT username
     INTO message_creator
     FROM messages, users
     WHERE users.id = messages.user_id AND messages.id = message_id;
 
-    IF username_ = message_creator OR role = 'admin'
+    IF username_ = message_creator OR is_section_moderator(username_, section_name) = 1
     THEN
       DELETE FROM messages
       WHERE id = message_id;
       log_add(username_, 'removed message id: ' || message_id);
       RETURN;
     END IF;
-
-    IF role = 'moderator'
-    THEN
-      FOR moderator IN (SELECT username
-                        FROM users, sections_users, topics, messages
-                        WHERE users.id = sections_users.user_id
-                              AND sections_users.section_id = topics.section_id
-                              AND topics.id = messages.topic_id
-                              AND messages.id = message_id)
-      LOOP
-        IF moderator.username = username_
-        THEN
-          DELETE FROM messages
-          WHERE id = message_id;
-          log_add(username_, 'removed message id: ' || message_id);
-          RETURN;
-        END IF;
-      END LOOP;
-    END IF;
-
   END remove_message;
 /
 
@@ -566,47 +510,30 @@ CREATE OR REPLACE FUNCTION get_message(message_id NUMBER)
 /
 
 
-CREATE OR REPLACE PROCEDURE edit_message(username_ VARCHAR2, message_id NUMBER, text_ VARCHAR2)
+CREATE OR REPLACE PROCEDURE edit_message(username_ VARCHAR2, message_id NUMBER, topic_text VARCHAR2)
 IS
-  role            VARCHAR2(30);
   message_creator VARCHAR2(30);
-  topic_id        NUMBER;
-
+  section_name    VARCHAR2(30);
   BEGIN
-    role := user_role(username_);
+    SELECT sections.name
+    INTO section_name
+    FROM sections, topics, messages
+    WHERE sections.id = topics.section_id
+          AND topics.id = messages.topic_id
+          AND messages.id = message_id;
 
     SELECT username
     INTO message_creator
     FROM messages, users
     WHERE users.id = messages.user_id AND messages.id = message_id;
 
-    IF username_ = message_creator OR role = 'admin'
+    IF username_ = message_creator OR is_section_moderator(username_, section_name) = 1
     THEN
       UPDATE messages
-      SET text = text_
+      SET text = topic_text
       WHERE id = message_id;
       log_add(username_, 'edited message id ' || message_id);
       RETURN;
-    END IF;
-
-    IF role = 'moderator'
-    THEN
-      FOR moderator IN (SELECT username
-                        FROM users, sections_users, topics, messages
-                        WHERE users.id = sections_users.user_id
-                              AND sections_users.section_id = topics.section_id
-                              AND topics.id = messages.topic_id
-                              AND messages.id = message_id)
-      LOOP
-        IF moderator.username = username_
-        THEN
-          UPDATE messages
-          SET text = text_
-          WHERE id = message_id;
-          log_add(username_, 'edited message id ' || message_id);
-          RETURN;
-        END IF;
-      END LOOP;
     END IF;
 
   END edit_message;
@@ -643,9 +570,9 @@ CREATE OR REPLACE FUNCTION get_roles_string(user_role VARCHAR2)
 /
 
 
-CREATE OR REPLACE FUNCTION topics_by_tag(user_role VARCHAR2, tag_name VARCHAR2)
+CREATE OR REPLACE FUNCTION topics_by_tag(username VARCHAR2, tag_name VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
-  in_clause VARCHAR2(200) := get_roles_string(user_role);
+  in_clause VARCHAR2(200) := get_roles_string(get_user_role(username));
   BEGIN
     EXECUTE IMMEDIATE 'BEGIN
                          OPEN :1 FOR SELECT
@@ -670,9 +597,9 @@ CREATE OR REPLACE FUNCTION topics_by_tag(user_role VARCHAR2, tag_name VARCHAR2)
 /
 
 
-CREATE OR REPLACE FUNCTION get_allowed_sections(user_role VARCHAR2)
+CREATE OR REPLACE FUNCTION get_allowed_sections(username VARCHAR2)
   RETURN SYS_REFCURSOR AS result SYS_REFCURSOR;
-  in_clause VARCHAR2(200) := get_roles_string(user_role);
+  in_clause VARCHAR2(200) := get_roles_string(get_user_role(username));
   BEGIN
     EXECUTE IMMEDIATE 'BEGIN
                          OPEN :1 FOR SELECT s.name, s.description, s.create_date,
@@ -684,4 +611,36 @@ CREATE OR REPLACE FUNCTION get_allowed_sections(user_role VARCHAR2)
     USING result;
     RETURN result;
   END get_allowed_sections;
+/
+
+
+CREATE OR REPLACE FUNCTION check_access_to_section(username    VARCHAR2, section_name VARCHAR2,
+                                                   access_mode VARCHAR2 DEFAULT 'read')
+  RETURN NUMBER
+IS
+  allowed_roles SYS_REFCURSOR := check_roles(get_user_role(username), access_mode);
+  section_role VARCHAR2(30);
+  current_role VARCHAR2(30);
+  BEGIN
+    IF username IS NULL AND access_mode = 'write'
+    THEN
+      RETURN 0;
+    END IF;
+
+    SELECT roles.name
+    INTO section_role
+    FROM sections, roles
+    WHERE roles.id = sections.role_id
+          AND sections.name = section_name;
+
+    LOOP
+      FETCH allowed_roles INTO current_role;
+      EXIT WHEN allowed_roles%NOTFOUND;
+      IF current_role = section_role
+      THEN
+        RETURN 1;
+      END IF;
+    END LOOP;
+    RETURN 0;
+  END check_access_to_section;
 /

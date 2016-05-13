@@ -13,13 +13,9 @@
   </tr>
 </table>
 
-<table>
-  <tr>
-    <h1 class="text-center">
-      Section {{ SECTION_NAME }}
-    </h1>
-  </tr>
-</table>
+<h1 class="text-center">
+  Section {{ SECTION_NAME }}
+</h1>
 
 <ul>
   {% for TOPIC in TOPICS %}
@@ -52,7 +48,7 @@
         </tr>
       </table>
 
-      {% if IS_MODERATOR %}
+        {% if USER.IS_MODERATOR %}
 
         <a href="{% url 'remove_topic' TOPIC.SECTION_NAME TOPIC.NAME %}">
           Remove
@@ -63,6 +59,17 @@
   {% endfor %}
 </ul>
 
+  {% if USER.CAN_CREATE_TOPIC %}
+    <table>
+      <tr>
+        <td>
+          <a href="{% url 'add_topic' SECTION_NAME %}">
+            Add Topic
+          </a>
+        </td>
+      </tr>
+    </table>
+  {% endif %}
 {% if CAN_CREATE_TOPIC %}
   <a class="btn btn-success col-md-4 col-md-offset-4" href="{% url 'add_topic' SECTION_NAME %}">
     Add Topic
