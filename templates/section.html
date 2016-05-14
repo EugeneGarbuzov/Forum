@@ -59,18 +59,7 @@
   {% endfor %}
 </ul>
 
-  {% if USER.CAN_CREATE_TOPIC %}
-    <table>
-      <tr>
-        <td>
-          <a href="{% url 'add_topic' SECTION_NAME %}">
-            Add Topic
-          </a>
-        </td>
-      </tr>
-    </table>
-  {% endif %}
-{% if CAN_CREATE_TOPIC %}
+{% if USER.CAN_CREATE_TOPIC %}
   <a class="btn btn-success col-md-4 col-md-offset-4" href="{% url 'add_topic' SECTION_NAME %}">
     Add Topic
   </a>
