@@ -17,7 +17,6 @@ def login(request):
     if request.method == 'POST':
         password_hash = hashlib.sha512(request.POST['password'].encode()).hexdigest()
         user = auth.authenticate(username=request.POST['username'], password=password_hash)
-        # user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
         if user:
             auth.login(request, user)
             return HttpResponseRedirect(reverse('index'))
