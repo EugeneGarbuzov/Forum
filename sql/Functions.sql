@@ -224,7 +224,7 @@ IS
     THEN
       DELETE FROM sections
       WHERE name = section_name;
-      log_add(username, 'removed section' || section_name);
+      log_add(username, 'removed section ' || section_name);
     END IF;
   END remove_section;
 /

@@ -94,7 +94,7 @@ CREATE TABLE users (
   role_id   NUMBER       NOT NULL,
   rank_id   NUMBER       NOT NULL,
   username  VARCHAR2(30) NOT NULL,
-  password  VARCHAR2(30) NOT NULL,
+  password  VARCHAR2(128) NOT NULL,
   email     VARCHAR2(30) NOT NULL,
   nickname  VARCHAR2(30) NOT NULL,
   full_name VARCHAR2(30) NOT NULL,

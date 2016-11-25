@@ -1,3 +1,5 @@
+import hashlib
+
 import cx_Oracle
 from django.contrib import auth
 from django.core.urlresolvers import reverse
@@ -13,7 +15,9 @@ def login(request):
         return HttpResponseRedirect(reverse('index'))
 
     if request.method == 'POST':
-        user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+        password_hash = hashlib.sha512(request.POST['password'].encode()).hexdigest()
+        user = auth.authenticate(username=request.POST['username'], password=password_hash)
+        # user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
         if user:
             auth.login(request, user)
             return HttpResponseRedirect(reverse('index'))
@@ -33,12 +37,13 @@ def register(request):
         return HttpResponseRedirect(reverse('index'))
 
     if request.method == 'POST':
+        password_hash = hashlib.sha512(request.POST['password'].encode()).hexdigest()
         try:
             with connection.cursor() as cursor:
-                cursor.callproc("register", (request.POST['username'], request.POST['password'], request.POST['email'],
+                cursor.callproc("register", (request.POST['username'], password_hash, request.POST['email'],
                                              request.POST['nickname'], request.POST['full_name'],
                                              request.POST['status'], request.POST['signature']))
-                user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+                user = auth.authenticate(username=request.POST['username'], password=password_hash)
                 auth.login(request, user)
 
                 return HttpResponseRedirect(reverse('index'))
@@ -77,9 +82,17 @@ def edit_profile(request):
                 return render(request, 'edit_profile.html', user)
 
             if request.method == 'POST':
-                cursor.callproc("update_private_user_info", (username, request.POST['password'], request.POST['email'],
+                password_hash = hashlib.sha512(request.POST['password'].encode()).hexdigest()
+                request.user.set_password(password_hash)
+                request.user.save()
+
+                cursor.callproc("update_private_user_info", (username, password_hash, request.POST['email'],
                                                              request.POST['nickname'], request.POST['full_name'],
                                                              request.POST['status'], request.POST['signature']))
+
+                user = auth.authenticate(username=username, password=password_hash)
+                auth.login(request, user)
+
                 return HttpResponseRedirect(reverse('index'))
     except:
         return render(request, 'edit_profile.html', {'ERROR': 1})
