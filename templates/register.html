@@ -5,7 +5,7 @@
 {% block content %}
 {% if ERROR %}
   <div class="alert alert-danger text-center">
-    Error.
+    {{ ERROR }}
   </div>
 {% endif %}
 
@@ -14,7 +14,7 @@
   <div class="form-group">
     <label class="col-md-4 control-label" for="username">Username</label>
     <div class="col-md-6">
-      <input type="text" class="form-control" name="username" id="username" placeholder="Username">
+      <input type="text" class="form-control" name="username" id="username" placeholder="Username" value="{{ username }}">
     </div>
   </div>
   <div class="form-group">
@@ -26,31 +26,31 @@
   <div class="form-group">
     <label class="col-md-4 control-label" for="email">Email</label>
     <div class="col-md-6">
-      <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+      <input type="email" class="form-control" id="email" name="email" placeholder="Email" value="{{ email }}">
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="nickname">Nickname</label>
     <div class="col-md-6">
-      <input type="text" class="form-control" name="nickname" id="nickname" placeholder="Nickname">
+      <input type="text" class="form-control" name="nickname" id="nickname" placeholder="Nickname" value="{{ nickname }}">
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="full_name">Full name</label>
     <div class="col-md-6">
-      <input type="text" class="form-control" name="full_name" id="full_name" placeholder="Full name">
+      <input type="text" class="form-control" name="full_name" id="full_name" placeholder="Full name" value="{{ full_name }}">
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="status">Status</label>
     <div class="col-md-6">
-        <textarea class="form-control" id="status" name="status" placeholder="Status"></textarea>
+        <textarea class="form-control" id="status" name="status" placeholder="Status">{{ status }}</textarea>
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="signature">Signature</label>
     <div class="col-md-6">
-        <textarea class="form-control" id="signature" name="signature" placeholder="Signature"></textarea>
+        <textarea class="form-control" id="signature" name="signature" placeholder="Signature">{{ signature }}</textarea>
     </div>
   </div>
   <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Register"/>

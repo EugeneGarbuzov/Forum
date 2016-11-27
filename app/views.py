@@ -8,6 +8,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
 from Forum.tools import fetch_to_dict
+from app.settings import url_sections_allowed_chars, tags_allowed_chars
+from app.tools import contains_only_allowed_chars
 
 
 def login(request):
@@ -36,18 +38,36 @@ def register(request):
         return HttpResponseRedirect(reverse('index'))
 
     if request.method == 'POST':
-        password_hash = hashlib.sha512(request.POST['password'].encode()).hexdigest()
         try:
+            username = request.POST['username']
+            email = request.POST['email']
+            nickname = request.POST['nickname']
+            full_name = request.POST['full_name']
+            status = request.POST['status']
+            signature = request.POST['signature']
+
+            if not contains_only_allowed_chars(username, url_sections_allowed_chars):
+                context = {
+                    'username': username,
+                    'email': email,
+                    'nickname': nickname,
+                    'full_name': full_name,
+                    'status': status,
+                    'signature': signature,
+                    'ERROR': 'User name contains invalid characters. You can use the following characters: {}'
+                        .format(url_sections_allowed_chars)
+                }
+                return render(request, 'register.html', context)
+
             with connection.cursor() as cursor:
-                cursor.callproc("register", (request.POST['username'], password_hash, request.POST['email'],
-                                             request.POST['nickname'], request.POST['full_name'],
-                                             request.POST['status'], request.POST['signature']))
+                password_hash = hashlib.sha512(request.POST['password'].encode()).hexdigest()
+                cursor.callproc("register", (username, password_hash, email, nickname, full_name, status, signature))
                 user = auth.authenticate(username=request.POST['username'], password=password_hash)
                 auth.login(request, user)
 
                 return HttpResponseRedirect(reverse('index'))
         except:
-            return render(request, 'register.html', {'ERROR': 1})
+            return render(request, 'register.html', {'ERROR': 'Unable to register user.'})
 
     return render(request, "register.html")
 
@@ -129,12 +149,25 @@ def add_section(request):
             user_role = cursor.callfunc('get_user_role', cx_Oracle.STRING, (username,))
 
             if request.method == 'GET' and user_role == 'admin':
-                return render(request, 'add_section.html')
+                context = { 'role_name': 'regular' }
+                return render(request, 'add_section.html', context)
 
             if request.method == 'POST':
-                cursor.callproc("add_section",
-                                (username, request.POST['name'],
-                                 request.POST['description'], request.POST['role_name']))
+                name = request.POST['name']
+                role_name = request.POST['role_name']
+                description = request.POST['description']
+
+                if not contains_only_allowed_chars(name, url_sections_allowed_chars):
+                    context = {
+                        'name': name,
+                        'role_name': role_name,
+                        'description': description,
+                        'error': 'Name contains invalid characters. You can use the following characters: {}'
+                            .format(url_sections_allowed_chars)
+                    }
+                    return render(request, 'add_section.html', context)
+
+                cursor.callproc("add_section", (username, name, description, role_name))
 
     return HttpResponseRedirect(reverse('index'))
 
@@ -184,12 +217,39 @@ def add_topic(request, section_name):
 
             if request.method == 'POST':
                 try:
+                    name = request.POST['name']
+                    description = request.POST['description']
+                    tags = request.POST['tags']
+
+                    if not contains_only_allowed_chars(name, url_sections_allowed_chars):
+                        context = {
+                            'name': name,
+                            'description': description,
+                            'tags': tags,
+                            'section_name': section_name,
+                            'error': 'Name contains invalid characters. You can use the following characters: {}'
+                                .format(url_sections_allowed_chars)
+                        }
+                        return render(request, 'add_topic.html', context)
+
+                    if not contains_only_allowed_chars(tags, tags_allowed_chars):
+                        context = {
+                            'name': name,
+                            'description': description,
+                            'tags': tags,
+                            'section_name': section_name,
+                            'error': 'Tags contain invalid characters. You can use the following characters: {}'
+                                .format(tags_allowed_chars)
+                        }
+                        return render(request, 'add_topic.html', context)
+
                     cursor.callproc('add_topic', (username, section_name, request.POST['name'],
                                                   request.POST['description']))
                     if request.POST['tags']:
                         cursor.callproc('add_tags', (request.POST['name'], request.POST['tags']))
                 except:
-                    return render(request, 'add_topic.html', {'section_name': section_name, 'error': 1})
+                    return render(request, 'add_topic.html',
+                                  {'section_name': section_name, 'error': 'Unable to add topic.'})
 
     return HttpResponseRedirect(reverse('section', args=(section_name,)))
 

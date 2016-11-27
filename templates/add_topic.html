@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Tag{% endblock %}
+{% block title %}Add topic{% endblock %}
 
 {% block content %}
 {% if error %}
   <div class="alert alert-danger text-center">
-    Error.
+    {{ error }}
   </div>
 {% endif %}
 
@@ -14,20 +14,20 @@
   <div class="form-group">
     <label class="col-md-4 control-label" for="name">Topic name</label>
     <div class="col-md-6">
-      <input type="text" class="form-control" name="name" id="name" placeholder="Topic name" required>
+      <input type="text" class="form-control" name="name" id="name" placeholder="Topic name" required value="{{ name }}">
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="description">Description</label>
     <div class="col-md-6">
         <textarea class="form-control" id="description" name="description" placeholder="Description"
-                  required></textarea>
+                  required>{{ description }}</textarea>
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="tags">Tags</label>
     <div class="col-md-6">
-      <input type="text" class="form-control" name="tags" id="tags" placeholder="Tags">
+      <input type="text" class="form-control" name="tags" id="tags" placeholder="Tags" value="{{ tags }}">
     </div>
   </div>
   <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Add topic"/>

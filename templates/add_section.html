@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Tag{% endblock %}
+{% block title %}Add section{% endblock %}
 
 {% block content %}
 {% if error %}
   <div class="alert alert-danger text-center">
-    Error.
+    {{ error }}
   </div>
 {% endif %}
 
@@ -14,24 +14,24 @@
   <div class="form-group">
     <label class="col-md-4 control-label" for="name">Section name</label>
     <div class="col-md-6">
-      <input type="text" class="form-control" name="name" id="name" placeholder="Section name">
+      <input type="text" class="form-control" name="name" id="name" placeholder="Section name" value="{{ name }}">
     </div>
   </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="role_name">Role name</label>
     <div class="col-md-6">
       <select class="form-control" id="role_name" name="role_name">
-        <option>admin</option>
-        <option>moderator</option>
-        <option selected="selected">regular</option>
-        <option>newbie</option>
+        <option {% if role_name == 'admin' %}selected{% endif %}>admin</option>
+        <option {% if role_name == 'moderator' %}selected{% endif %}>moderator</option>
+        <option {% if role_name == 'regular' %}selected{% endif %}>regular</option>
+        <option {% if role_name == 'newbie' %}selected{% endif %}>newbie</option>
       </select>
     </div>
 </div>
   <div class="form-group">
     <label class="col-md-4 control-label" for="description">Description</label>
     <div class="col-md-6">
-        <textarea class="form-control" id="description" name="description" placeholder="Description"></textarea>
+        <textarea class="form-control" id="description" name="description" placeholder="Description">{{ description }}</textarea>
     </div>
   </div>
   <input class="btn btn-success col-md-4 col-md-offset-4" type="submit" value="Add section"/>
