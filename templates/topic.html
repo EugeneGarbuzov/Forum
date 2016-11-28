@@ -29,11 +29,13 @@
         {{ MESSAGE.NICKNAME }}
       </a>
       <br/>
-
+      {% if USER.USERNAME %}
       <a href="{% url 'like_message' SECTION_NAME TOPIC_NAME MESSAGE.ID %}">
         Like: {{ MESSAGE.RATING }}
       </a>
-
+      {% else %}
+        Like: {{ MESSAGE.RATING }}
+      {% endif %}
       <br/>
 
       {% if USER.IS_MODERATOR or USER.USERNAME == MESSAGE.USERNAME %}
